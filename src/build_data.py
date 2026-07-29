@@ -470,7 +470,8 @@ def build_preliminary(windows, after_year, newest_report, peaks=None):
 
 
 FATE_FIELDS = ['adult_total', 'jack_total', 'mortality', 'surplus',
-               'live_released', 'lethal_spawned', 'live_spawned', 'eggtake']
+               'live_released', 'lethal_spawned', 'live_spawned', 'eggtake',
+               'shipped', 'on_hand_adults']
 
 
 def build_fate(peaks, facmap=None):
@@ -533,8 +534,78 @@ def build_fate(peaks, facmap=None):
         return out
 
     return {'cols': ['year', 'sp', 'fac', 'trapped', 'jacks', 'mortality', 'surplus',
-                     'released', 'lethal_spawned', 'live_spawned', 'eggtake'],
+                     'released', 'lethal_spawned', 'live_spawned', 'eggtake',
+                     'shipped', 'on_hand'],
             'species': inv(sps), 'facilities': inv(facs), 'rows': rows}
+
+
+SHIPPED_TO = re.compile(r'shipped\s+to\s+([A-Z][\w .\'-]{2,44}?)\s*(?:\.|$)', re.I)
+
+
+def build_transfers(facmap=None):
+    """Fish moved between hatcheries, as a directed graph.
+
+    The reports carry a count of fish shipped out but never a column saying where they
+    went — that is written in the comment beside it ("Shipped to Speelyai Hatchery.").
+    Pairing the two recovers the movement network, which is what explains a rack whose
+    egg take does not match the fish that returned to it.
+    """
+    if not os.path.exists(paths.RAW_WEEKLY):
+        return None
+    import datetime
+    alias = (facmap or {}).get('alias', {})
+    merged = (facmap or {}).get('merged', {})
+
+    def canon(raw):
+        n = norm_fac(raw)
+        return merged.get(alias.get(n, n), alias.get(n, n))
+
+    edges = collections.defaultdict(lambda: {'n': 0, 'seasons': set(), 'sp': collections.Counter()})
+    for r in csv.DictReader(open_text(paths.RAW_WEEKLY)):
+        note = (r.get('comments') or '')
+        m = SHIPPED_TO.search(note)
+        if not m:
+            continue
+        n = i(r.get('shipped'))
+        if n <= 0:
+            continue
+        rd = r.get('report_date') or ''
+        try:
+            d = datetime.datetime.strptime(rd.split(', ', 1)[1], '%B %d, %Y').date()
+        except (ValueError, IndexError):
+            continue
+        season = d.year if d.month >= SEASON_START_MONTH else d.year - 1
+        src, dst = canon(r.get('facility')), canon(m.group(1))
+        if not src or not dst or src == dst:
+            continue
+        grp, _ = norm_species(r.get('species'))
+        # the shipped figure is cumulative, so the largest seen in a season is the total
+        e = edges[(src, dst, season, grp)]
+        e['n'] = max(e['n'], n)
+        e['seasons'].add(season)
+        e['sp'][grp] += 1
+
+    facs, sps = {}, {}
+
+    def idx(d, k):
+        if k not in d:
+            d[k] = len(d)
+        return d[k]
+
+    rows = []
+    for (src, dst, season, grp), e in sorted(edges.items()):
+        rows.append([idx(facs, src), idx(facs, dst), season, idx(sps, grp), e['n']])
+
+    def inv(d):
+        out = [None] * len(d)
+        for k, n in d.items():
+            out[n] = k
+        return out
+
+    if not rows:
+        return None
+    return {'cols': ['from', 'to', 'year', 'sp', 'fish'],
+            'facilities': inv(facs), 'species': inv(sps), 'rows': rows}
 
 
 def latest_weekly_report_date():
@@ -669,6 +740,9 @@ def main():
         fate = build_fate(peaks, facmap)
         if fate:
             data['fate'] = fate
+    tr = build_transfers(facmap)
+    if tr:
+        data['transfers'] = tr
     A['preliminary_seasons'] = prelim_seasons
     A['final_through'] = final_through
     A.pop('_facmap', None)
@@ -709,6 +783,11 @@ def main():
           '| geocoded', (g or {}).get('n', 0))
     if data.get('fate'):
         print('fate rows (facility x species x season):', len(data['fate']['rows']))
+    if data.get('transfers'):
+        t = data['transfers']
+        print(f"transfers: {len(t['rows'])} movements between "
+              f"{len(t['facilities'])} hatcheries, "
+              f"{sum(r[4] for r in t['rows']):,} fish")
     if wk:
         print('weekly series', len(wk['series']), 'from', wk['n_reports'], 'reports',
               f"({len(wk['dropped'])} mis-segmented dropped)" if wk.get('dropped') else '')

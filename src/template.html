@@ -316,6 +316,34 @@ th.sortable:hover { color: var(--ink); }
 }
 .print-only { display: none; }
 
+/* ---------- all-rack sparklines ---------- */
+.facmini {
+  display: block; width: 100%; text-align: left; font: inherit; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 9px;
+  padding: 8px 9px 4px; color: var(--ink);
+}
+.facmini:hover { border-color: var(--axis); background: var(--surface-2); }
+.facmini-head { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; }
+.facmini-name {
+  font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.facmini-val { font-family: var(--mono); font-size: 10.5px; color: var(--ink-3); flex: none; }
+
+/* ---------- facility profile ---------- */
+.profile {
+  display: grid; gap: 14px 22px; margin: 0 0 16px;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  padding-bottom: 14px; border-bottom: 1px solid var(--grid);
+}
+.pf { display: flex; flex-direction: column; gap: 1px; }
+.pf-l {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .09em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.pf-v { font-size: 19px; font-weight: 620; letter-spacing: -.015em; }
+.pf-s { font-size: 11.5px; color: var(--ink-2); }
+
 /* ---------- hatchery picker ---------- */
 .picker { display: grid; gap: 10px; margin: 2px 0 16px; }
 .picker-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
@@ -418,6 +446,7 @@ code { font-family: var(--mono); font-size: .92em; }
   <button class="tab" role="tab" id="tab-eggs"      aria-controls="panel-eggs"      aria-selected="false">Egg take</button>
   <button class="tab" role="tab" id="tab-fate"      aria-controls="panel-fate"      aria-selected="false">At the rack</button>
   <button class="tab" role="tab" id="tab-trends"    aria-controls="panel-trends"    aria-selected="false">Trends</button>
+  <button class="tab" role="tab" id="tab-programs"  aria-controls="panel-programs"  aria-selected="false">Programs</button>
   <button class="tab" role="tab" id="tab-map"       aria-controls="panel-map"       aria-selected="false">Map</button>
   <button class="tab" role="tab" id="tab-data"      aria-controls="panel-data"      aria-selected="false">Data</button>
 </nav>
@@ -525,9 +554,22 @@ code { font-family: var(--mono); font-size: .92em; }
         <button class="tbl-toggle" data-table="t-fac">Table</button>
       </div>
     </div>
+    <div id="fac-profile"></div>
     <svg class="plot" id="c-fac" height="320"></svg>
     <div class="legend" id="l-fac"></div>
     <div class="tbl-wrap hidden" id="t-fac"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Every rack at once</h2>
+        <p class="note" id="allfac-note">One sparkline per hatchery, each on its own scale, ordered by size. For finding the one behaving unlike its neighbours.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-allfac">Table</button>
+    </div>
+    <div class="grid" id="allfac" style="grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px"></div>
+    <div class="tbl-wrap hidden" id="t-allfac"></div>
   </div>
 
   <div class="card">
@@ -565,6 +607,19 @@ code { font-family: var(--mono); font-size: .92em; }
 
 <!-- ============ RUN TIMING ============ -->
 <section id="panel-timing" role="tabpanel" aria-labelledby="tab-timing" class="grid hidden">
+  <div class="card" id="card-progress">
+    <div class="card-head">
+      <div>
+        <h2>How this season is tracking</h2>
+        <p class="note" id="progress-note">The season in progress against the range of past seasons at the same point in the year — ahead, behind, or ordinary.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-progress">Table</button>
+    </div>
+    <svg class="plot" id="c-progress" height="330"></svg>
+    <div class="legend" id="l-progress"></div>
+    <div class="tbl-wrap hidden" id="t-progress"></div>
+  </div>
+
   <div class="card">
     <div class="card-head">
       <div>
@@ -742,6 +797,22 @@ code { font-family: var(--mono); font-size: .92em; }
   <div class="card">
     <div class="card-head">
       <div>
+        <h2>Eggs in, adults out</h2>
+        <p class="note" id="brood-note">Egg take in one season against the adults that came back three, four and five years later — a return-per-egg measure built from the reports alone.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="brood-species"></select>
+        <button class="tbl-toggle" data-table="t-brood">Table</button>
+      </div>
+    </div>
+    <svg class="plot" id="c-brood" height="320"></svg>
+    <div class="legend" id="l-brood"></div>
+    <div class="tbl-wrap hidden" id="t-brood"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
         <h2>Forecasting next season from jacks</h2>
         <p class="note" id="fc-note">Jacks return a year early, so their number is a leading indicator of the adult run behind them.</p>
       </div>
@@ -753,6 +824,39 @@ code { font-family: var(--mono); font-size: .92em; }
   </div>
 </section>
 
+
+
+<!-- ============ PROGRAMS ============ -->
+<section id="panel-programs" role="tabpanel" aria-labelledby="tab-programs" class="grid hidden">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Which stocks are handled where</h2>
+        <p class="note" id="stock-note">Every stock against every rack that handled it. Reading down a column shows a hatchery's programme; reading across a row shows how widely a stock is spread.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="stock-species"></select>
+        <button class="tbl-toggle" data-table="t-stock">Table</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><svg class="plot" id="c-stock"></svg></div>
+    <div class="legend" id="l-stock"></div>
+    <div class="tbl-wrap hidden" id="t-stock"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Fish moved between hatcheries</h2>
+        <p class="note" id="xfer-note">The reports count fish shipped out but name the destination only in the comment beside it. Pairing the two recovers the movement network.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-xfer">Table</button>
+    </div>
+    <svg class="plot" id="c-xfer"></svg>
+    <div class="legend" id="l-xfer"></div>
+    <div class="tbl-wrap hidden" id="t-xfer"></div>
+  </div>
+</section>
 
 <!-- ============ MAP ============ -->
 <section id="panel-map" role="tabpanel" aria-labelledby="tab-map" class="grid hidden">
@@ -767,6 +871,10 @@ code { font-family: var(--mono); font-size: .92em; }
           <option value="adults">Size by adults</option>
           <option value="eggtake">Size by egg take</option>
           <option value="uniform">Uniform size</option>
+        </select>
+        <select id="map-colour">
+          <option value="species">Colour by largest run</option>
+          <option value="wria">Colour by watershed</option>
         </select>
         <button class="tbl-toggle" data-table="t-map">Table</button>
       </div>
@@ -1541,6 +1649,7 @@ function renderFacDetail(rows, years) {
   const f = state.facility;
   if (f == null) return;
   $('fac-title').textContent = A.facilities[f];
+  renderFacProfile(f, rows, years);
   const sub = rows.filter(r => r[C.fac] === f);
   const tot = new Map();
   for (const r of sub) tot.set(r[C.sp], (tot.get(r[C.sp]) || 0) + r[C.adults]);
@@ -2060,16 +2169,19 @@ function renderAll() {
     renderSmalls(rows, years); renderRace(rows, years);
   } else if (panel === 'panel-facility') {
     renderFacilities(rows, years);
+    renderAllFacilities(rows, years);
     renderCompare(rows, years);
   } else if (panel === 'panel-timing') {
-    renderTiming(); renderMedian();
+    renderTiming(); renderProgress(); renderMedian();
   } else if (panel === 'panel-eggs') {
     renderEggs(rows, years);
   } else if (panel === 'panel-fate') {
     renderFate(years);
   } else if (panel === 'panel-trends') {
-    renderTrends(years);
+    renderTrends(years); renderBrood(years);
 
+  } else if (panel === 'panel-programs') {
+    renderStockMatrix(); renderTransfers();
   } else if (panel === 'panel-map') {
     renderMap(rows, years); renderWria(rows);
   } else if (panel === 'panel-data') {
@@ -2361,6 +2473,7 @@ function renderMap(rows, years) {
     el('path', { class: 'land', d: d + 'Z' }, svg);
   }
 
+  const colourBy = ($('map-colour') || {}).value || 'species';
   const sites = [];
   for (const [fac, v] of tot) {
     const g = geoOf(fac);
@@ -2370,25 +2483,57 @@ function renderMap(rows, years) {
       const x = mix.get(fac + ':' + sp) || 0;
       if (x > topV) { topV = x; topSp = sp; }
     }
-    sites.push({ fac, v, g, topSp, name: A.facilities[fac] });
+    sites.push({ fac, v, g, topSp, name: A.facilities[fac],
+                 wria: g[GC.wria], system: g[GC.system] || g[GC.waterbody] || '' });
   }
   sites.sort((a, b) => b.v - a.v);
+
+  /* Watersheds get their own palette, assigned by size so the busiest basins take the
+     leading slots. WRIA boundaries themselves are not published with this data, so a
+     basin is drawn as the area its own hatcheries enclose — an extent, not a border. */
+  const wriaTotals = new Map();
+  for (const s of sites) if (s.wria != null)
+    wriaTotals.set(s.wria, (wriaTotals.get(s.wria) || 0) + s.v);
+  const wriaRank = [...wriaTotals.entries()].sort((a, b) => b[1] - a[1]).map(e => e[0]);
+  const wriaColour = w => {
+    const i = wriaRank.indexOf(w);
+    return i >= 0 && i < SERIES_VARS.length ? cssv(SERIES_VARS[i]) : cssv('--ink-3');
+  };
+  const colourOfSite = s => colourBy === 'wria' ? wriaColour(s.wria) : colorOf(s.topSp);
 
   const maxV = Math.max(1, ...sites.map(s => s.v));
   const rOf = v => basis === 'uniform' ? 4.5
     : Math.max(2.6, Math.sqrt(v / maxV) * 19);
 
   /* biggest first so small racks stay clickable on top */
+  if (colourBy === 'wria') {
+    /* a soft hull behind each watershed's racks, so basins read as groups */
+    const byW = new Map();
+    for (const s of sites) {
+      if (s.wria == null) continue;
+      if (!byW.has(s.wria)) byW.set(s.wria, []);
+      byW.get(s.wria).push([P.x(s.g[GC.lon]), P.y(s.g[GC.lat])]);
+    }
+    for (const w of wriaRank.slice(0, SERIES_VARS.length)) {
+      const pts = byW.get(w) || [];
+      if (pts.length < 3) continue;
+      const hull = convexHull(pts);
+      if (hull.length < 3) continue;
+      el('path', { d: 'M' + hull.map(p => p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('L') + 'Z',
+                   fill: wriaColour(w), 'fill-opacity': .13,
+                   stroke: wriaColour(w), 'stroke-opacity': .35, 'stroke-width': 1 }, svg);
+    }
+  }
   for (const s of sites) {
     const cx = P.x(s.g[GC.lon]), cy = P.y(s.g[GC.lat]), r = rOf(s.v);
-    el('circle', { class: 'site', cx, cy, r, fill: colorOf(s.topSp),
+    el('circle', { class: 'site', cx, cy, r, fill: colourOfSite(s),
                    'fill-opacity': .78 }, svg);
   }
   for (const s of sites) {
     const cx = P.x(s.g[GC.lon]), cy = P.y(s.g[GC.lat]), r = rOf(s.v);
     const hit = el('circle', { class: 'site-hit', cx, cy, r: Math.max(r, 12) }, svg);
     hit.addEventListener('pointermove', ev => showTip(ev.clientX, ev.clientY, s.name, [
-      { color: colorOf(s.topSp), value: fmt(s.v),
+      { color: colourOfSite(s), value: fmt(s.v),
         name: basis === 'eggtake' ? 'eggs' : 'adults' },
       { value: A.species[s.topSp], name: 'largest run' },
       { value: (s.g[GC.county] || '—') + ' Co.', name: 'county' },
@@ -2411,9 +2556,16 @@ function renderMap(rows, years) {
   el('text', { class: 'tick', x: bx + px / 2, y: by - 7, 'text-anchor': 'middle' }, svg)
     .textContent = kmLen + ' km';
 
-  const seen = [...new Set(sites.map(s => s.topSp))];
-  renderLegend($('l-map'), SP_ORDER.filter(sp => spColorVar.has(sp) && seen.includes(sp))
-    .map(sp => ({ name: A.species[sp], color: colorOf(sp) })), true);
+  if (colourBy === 'wria') {
+    renderLegend($('l-map'), wriaRank.slice(0, SERIES_VARS.length).map(w => ({
+      name: 'WRIA ' + w + ' — ' +
+            ((sites.find(s => s.wria === w) || {}).system || '').slice(0, 26),
+      color: wriaColour(w) })), true);
+  } else {
+    const seen = [...new Set(sites.map(s => s.topSp))];
+    renderLegend($('l-map'), SP_ORDER.filter(sp => spColorVar.has(sp) && seen.includes(sp))
+      .map(sp => ({ name: A.species[sp], color: colorOf(sp) })), true);
+  }
   $('map-note').textContent =
     `${sites.length} racks with a location, sized by ${basis === 'eggtake' ? 'egg take' :
       basis === 'uniform' ? 'nothing (uniform)' : 'adults trapped'} over ` +
@@ -2431,7 +2583,30 @@ function renderMap(rows, years) {
     sites, { caption: 'Coordinates from the WDFW HatcheryLikeFacilities GIS layer.' });
 }
 
+/* Andrew's monotone chain — the smallest polygon containing a basin's racks */
+function convexHull(pts) {
+  const p = [...pts].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o, a, b) =>
+    (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower = [];
+  for (const q of p) {
+    while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], q) <= 0)
+      lower.pop();
+    lower.push(q);
+  }
+  const upper = [];
+  for (let i = p.length - 1; i >= 0; i--) {
+    const q = p[i];
+    while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], q) <= 0)
+      upper.pop();
+    upper.push(q);
+  }
+  lower.pop(); upper.pop();
+  return lower.concat(upper);
+}
+
 $('map-basis').addEventListener('change', () => renderAll());
+$('map-colour').addEventListener('change', () => renderAll());
 
 function renderWria(rows) {
   if (!GEO) return;
@@ -3340,6 +3515,597 @@ function renderTrends(years) {
 </script>
 
 
+
+<script>
+"use strict";
+/* ===================================================================
+   Season progress against the historical envelope
+   =================================================================== */
+function renderProgress() {
+  const card = $('card-progress');
+  if (!W) { card.classList.add('hidden'); return; }
+  const sp = state.timingSp;
+  const name = W.species[sp];
+  /* The season in progress is the one whose March-to-March window still contains
+     the newest report — not merely the last one on record. A run that has finished
+     but has no successor yet is complete, not live. */
+  const liveYear = (RAW.in_season || {}).year;
+  const all = W.series.filter(s => s.sp === sp);
+  const live = liveYear == null ? null : all.find(s => s.season === liveYear);
+  const past = all.filter(s => s.done && s.from_start && s.season !== liveYear);
+  if (!live || past.length < 4) {
+    card.classList.add('hidden');
+    /* say why rather than silently vanishing */
+    const note = $('progress-note');
+    if (note && liveYear != null) {
+      note.textContent = !live
+        ? `${name} has not been reported yet in ${season(liveYear)}.`
+        : `Not enough completed ${name} seasons to draw a range against.`;
+    }
+    return;
+  }
+  card.classList.remove('hidden');
+
+  const lastWk = Math.max(...all.map(s => s.w[s.w.length - 1][0]));
+  const weeks = [];
+  for (let w = 0; w <= Math.min(75, lastWk); w++) weeks.push(w);
+
+  /* each past season as a step function of cumulative fish at each week */
+  const stepped = past.map(s => {
+    const m = new Map(s.w);
+    let run = null;
+    return weeks.map(w => { if (m.has(w)) run = m.get(w); return run; });
+  });
+  const liveMap = new Map(live.w);
+  /* carry the cumulative forward only as far as the season has actually reached —
+     filling to the end of the axis would compare a part-season against whole ones */
+  const liveEnd = live.w[live.w.length - 1][0];
+  let lr = null;
+  const liveVals = weeks.map(w => {
+    if (w > liveEnd) return null;
+    if (liveMap.has(w)) lr = liveMap.get(w);
+    return lr;
+  });
+  const liveLast = weeks.indexOf(Math.min(liveEnd, weeks[weeks.length - 1]));
+
+  const pct = (arr, p) => {
+    const v = arr.filter(x => x != null).sort((a, b) => a - b);
+    if (!v.length) return null;
+    const idx = (v.length - 1) * p;
+    const lo = Math.floor(idx), hi = Math.ceil(idx);
+    return v[lo] + (v[hi] - v[lo]) * (idx - lo);
+  };
+  const band = weeks.map((w, i) => {
+    const col = stepped.map(r => r[i]);
+    return { p10: pct(col, 0.10), p50: pct(col, 0.50), p90: pct(col, 0.90) };
+  });
+
+  const svg = $('c-progress');
+  clear(svg);
+  const Wd = width(svg), H = 330, m = { t: 16, r: 64, b: 30, l: 56 };
+  svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+  const iw = Wd - m.l - m.r, ih = H - m.t - m.b;
+  const yMax = Math.max(1, ...band.map(b => b.p90 || 0), ...liveVals.filter(v => v != null));
+  const ticks = niceTicks(yMax);
+  const top = Math.max(yMax, ticks[ticks.length - 1]);
+  const X = i => m.l + (i / (weeks.length - 1)) * iw;
+  const Y = v => m.t + ih - (v / top) * ih;
+
+  for (const t of ticks) {
+    el('line', { class: 'gridline', x1: m.l, x2: m.l + iw, y1: Y(t), y2: Y(t) }, svg);
+    el('text', { class: 'tick', x: m.l - 8, y: Y(t) + 4, 'text-anchor': 'end' }, svg)
+      .textContent = compact(t);
+  }
+  el('line', { class: 'axis-line', x1: m.l, x2: m.l + iw, y1: Y(0), y2: Y(0) }, svg);
+
+  /* the 10th-90th band, drawn as a filled ribbon */
+  let up = '', dn = '';
+  weeks.forEach((w, i) => {
+    if (band[i].p10 == null) return;
+    up += (up ? 'L' : 'M') + X(i) + ' ' + Y(band[i].p90);
+    dn = 'L' + X(i) + ' ' + Y(band[i].p10) + dn;
+  });
+  if (up) el('path', { d: up + dn + 'Z', fill: cssv('--ink-3'), 'fill-opacity': .16 }, svg);
+  let med = '';
+  weeks.forEach((w, i) => {
+    if (band[i].p50 == null) return;
+    med += (med ? 'L' : 'M') + X(i) + ' ' + Y(band[i].p50);
+  });
+  if (med) el('path', { class: 'serie', d: med, stroke: cssv('--ink-3'),
+                        'stroke-opacity': .8, 'stroke-dasharray': '5 3.5' }, svg);
+
+  let cur = '';
+  weeks.forEach((w, i) => {
+    if (liveVals[i] == null) return;
+    cur += (cur ? 'L' : 'M') + X(i) + ' ' + Y(liveVals[i]);
+  });
+  if (cur) el('path', { class: 'serie', d: cur, stroke: cssv('--s1') }, svg);
+  if (liveVals[liveLast] != null)
+    el('circle', { class: 'endcap', cx: X(liveLast), cy: Y(liveVals[liveLast]), r: 5,
+                   fill: cssv('--s1') }, svg);
+
+  const step = Math.max(1, Math.ceil(weeks.length / Math.max(2, Math.floor(iw / 66))));
+  for (let i = weeks.length - 1; i >= 0; i -= step)
+    el('text', { class: 'tick', x: X(i), y: H - 8, 'text-anchor': 'middle' }, svg)
+      .textContent = WEEK_LABEL(weeks[i]);
+
+  const hit = el('rect', { class: 'hit', x: m.l, y: m.t, width: iw, height: ih }, svg);
+  hit.addEventListener('pointermove', ev => {
+    const bb = svg.getBoundingClientRect();
+    const px = (ev.clientX - bb.left) * (Wd / bb.width);
+    let i = Math.round(((px - m.l) / iw) * (weeks.length - 1));
+    i = Math.max(0, Math.min(weeks.length - 1, i));
+    const rows = [];
+    if (liveVals[i] != null)
+      rows.push({ color: cssv('--s1'), value: fmt(liveVals[i]), name: season(live.season) });
+    if (band[i].p50 != null) {
+      rows.push({ color: cssv('--ink-3'), value: fmt(Math.round(band[i].p50)),
+                  name: 'typical by now' });
+      rows.push({ value: `${fmt(Math.round(band[i].p10))} – ${fmt(Math.round(band[i].p90))}`,
+                  name: 'usual range' });
+    }
+    showTip(ev.clientX, ev.clientY, WEEK_LABEL(weeks[i]), rows);
+  });
+  hit.addEventListener('pointerleave', hideTip);
+
+  const nowV = liveVals[liveLast], nowMed = band[liveLast].p50;
+  const diff = nowMed ? (nowV - nowMed) / nowMed * 100 : null;
+  renderLegend($('l-progress'), [
+    { name: `${season(live.season)} so far`, color: cssv('--s1') },
+    { name: `middle of the last ${past.length} seasons`, color: cssv('--ink-3') }]);
+  $('progress-note').textContent =
+    `${name}, ${season(live.season)}. By ${WEEK_LABEL(weeks[liveLast])} `
+    + `${fmt(nowV)} adults had been counted`
+    + (diff == null ? '.'
+       : `, against a typical ${fmt(Math.round(nowMed))} by this point — `
+         + `${Math.abs(diff).toFixed(0)}% ${diff >= 0 ? 'ahead of' : 'behind'} the median `
+         + `of the last ${past.length} seasons. The band covers the middle 80% of them.`);
+
+  renderTable($('t-progress'),
+    [{ label: 'Week ending', left: true, get: r => WEEK_LABEL(weeks[r.i]) },
+     { label: season(live.season), get: r => liveVals[r.i] == null ? '—' : fmt(liveVals[r.i]) },
+     { label: 'Typical', get: r => band[r.i].p50 == null ? '—' : fmt(Math.round(band[r.i].p50)) },
+     { label: 'Usual low', get: r => band[r.i].p10 == null ? '—' : fmt(Math.round(band[r.i].p10)) },
+     { label: 'Usual high', get: r => band[r.i].p90 == null ? '—' : fmt(Math.round(band[r.i].p90)) },
+     { label: 'vs typical', get: r => {
+         if (liveVals[r.i] == null || !band[r.i].p50) return '—';
+         const d = (liveVals[r.i] - band[r.i].p50) / band[r.i].p50 * 100;
+         return (d > 0 ? '+' : '') + d.toFixed(0) + '%'; } }],
+    weeks.map((w, i) => ({ w, i })).filter(r => liveVals[r.i] != null || band[r.i].p50 != null),
+    { caption: `Percentiles across ${past.length} completed seasons observed from the `
+             + `start of the run. Weekly figures are preliminary.` });
+}
+
+/* ===================================================================
+   Brood-year productivity — eggs in, adults out
+   =================================================================== */
+const BROOD_LAGS = [3, 4, 5];
+
+function renderBrood(years) {
+  const sel = $('brood-species');
+  if (!sel.options.length) {
+    SP_ORDER.filter(sp => spColorVar.has(sp))
+      .forEach(sp => sel.appendChild(new Option(A.species[sp], sp)));
+    state.broodSp = state.broodSp ?? +sel.options[0].value;
+    sel.value = state.broodSp;
+    sel.addEventListener('change', () => { state.broodSp = +sel.value; renderAll(); });
+  }
+  const sp = state.broodSp ?? +sel.options[0].value;
+  const eggs = new Map(), adults = new Map();
+  for (const r of rowsInScope()) {
+    if (r[C.sp] !== sp) continue;
+    eggs.set(r[C.year], (eggs.get(r[C.year]) || 0) + r[C.eggtake]);
+    if (!isPrelim(r[C.year]))
+      adults.set(r[C.year], (adults.get(r[C.year]) || 0) + r[C.adults]);
+  }
+  const ys = [...eggs.keys()].sort((a, b) => a - b);
+  const rows = ys.map(y => {
+    const e = eggs.get(y) || 0;
+    const back = {};
+    for (const L of BROOD_LAGS) back[L] = adults.get(y + L) ?? null;
+    const known = BROOD_LAGS.filter(L => back[L] != null);
+    const total = known.reduce((a, L) => a + back[L], 0);
+    return { y, eggs: e, back, total: known.length === BROOD_LAGS.length ? total : null,
+             perM: e && known.length === BROOD_LAGS.length ? total / (e / 1e6) : null };
+  }).filter(r => r.eggs > 0);
+
+  const withRate = rows.filter(r => r.perM != null);
+  const series = [{
+    name: 'Adults returned per million eggs', color: colorOf(sp), label: false,
+    values: rows.map(r => r.perM)
+  }];
+  lineChart($('c-brood'), { xs: rows.map(r => r.y), series, xLabel: season,
+    yFmt: v => fmt(Math.round(v)), valFmt: v => fmt(Math.round(v)) + ' adults / million eggs' });
+  renderLegend($('l-brood'), [{ name: `${A.species[sp]} — adults back per million eggs taken`,
+                               color: colorOf(sp) }]);
+  const mean = withRate.length
+    ? withRate.reduce((a, r) => a + r.perM, 0) / withRate.length : 0;
+  $('brood-note').textContent =
+    `${A.species[sp]}: egg take in one season against the adults that returned `
+    + `${BROOD_LAGS.join(', ')} years later, summed. Averaging `
+    + `${fmt(Math.round(mean))} adults per million eggs across `
+    + `${withRate.length} complete brood years. This is a return-per-egg measure, not a `
+    + `true survival rate — it cannot see how many of those eggs were released, nor `
+    + `which returning fish came from which hatchery.`;
+  renderTable($('t-brood'),
+    [{ label: 'Brood season', left: true, get: r => season(r.y) },
+     { label: 'Egg take', get: r => fmt(r.eggs) },
+     ...BROOD_LAGS.map(L => ({ label: `Adults +${L} yr`,
+       get: r => r.back[L] == null ? '—' : fmt(r.back[L]) })),
+     { label: 'Total returned', get: r => r.total == null ? '—' : fmt(r.total) },
+     { label: 'Per million eggs', get: r => r.perM == null ? '—' : fmt(Math.round(r.perM)) }],
+    rows,
+    { caption: 'Brood years whose full return window has not yet elapsed show blanks. '
+             + 'Egg take stands in for juveniles released, which the escapement reports '
+             + 'do not carry — so this tracks hatchery productivity, not marine survival.' });
+}
+</script>
+
+<script>
+"use strict";
+/* ===================================================================
+   Stock x facility matrix, and the fish-transfer network
+   =================================================================== */
+function renderStockMatrix() {
+  const sel = $('stock-species');
+  if (!sel.options.length) {
+    SP_ORDER.filter(sp => spColorVar.has(sp))
+      .forEach(sp => sel.appendChild(new Option(A.species[sp], sp)));
+    state.stockSp = state.stockSp ?? +sel.options[0].value;
+    sel.value = state.stockSp;
+    sel.addEventListener('change', () => { state.stockSp = +sel.value; renderAll(); });
+  }
+  const sp = state.stockSp ?? +sel.options[0].value;
+  const cell = new Map(), facTot = new Map(), stkTot = new Map();
+  for (const r of rowsInScope()) {
+    if (r[C.sp] !== sp) continue;
+    const st = A.stocks[r[C.stock]] || '(unnamed)';
+    const fa = A.facilities[r[C.fac]];
+    const v = r[C.adults];
+    if (!v) continue;
+    cell.set(fa + ' ' + st, (cell.get(fa + ' ' + st) || 0) + v);
+    facTot.set(fa, (facTot.get(fa) || 0) + v);
+    stkTot.set(st, (stkTot.get(st) || 0) + v);
+  }
+  const facs = [...facTot.entries()].sort((a, b) => b[1] - a[1]).slice(0, 26).map(e => e[0]);
+  const stks = [...stkTot.entries()].sort((a, b) => b[1] - a[1]).slice(0, 22).map(e => e[0]);
+  const svg = $('c-stock');
+  clear(svg);
+  if (!facs.length || !stks.length) {
+    $('stock-note').textContent = 'Nothing in this selection.';
+    return;
+  }
+
+  const cw = 30, chh = 20, m = { t: 108, r: 12, b: 12, l: 178 };
+  const Wd = m.l + facs.length * cw + m.r, H = m.t + stks.length * chh + m.b;
+  svg.setAttribute('width', Wd);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', '0 0 ' + Wd + ' ' + H);
+  svg.style.width = Wd + 'px';
+  const max = Math.max(...cell.values());
+  /* one hue, light to dark: this is a magnitude, so it gets a sequential ramp */
+  const shade = v => {
+    const t = Math.sqrt(v / max);
+    return 'color-mix(in oklab, ' + colorOf(sp) + ' ' +
+           Math.round(12 + t * 88) + '%, var(--surface))';
+  };
+  facs.forEach((f, x) => {
+    const tx = m.l + x * cw + cw / 2;
+    el('text', { class: 'tick', x: tx, y: m.t - 8, 'text-anchor': 'start',
+                 transform: 'rotate(-55 ' + tx + ' ' + (m.t - 8) + ')' }, svg)
+      .textContent = f;
+  });
+  stks.forEach((st, y) => {
+    el('text', { class: 'tick', x: m.l - 8, y: m.t + y * chh + chh / 2 + 4,
+                 'text-anchor': 'end' }, svg).textContent = st.slice(0, 30);
+    facs.forEach((f, x) => {
+      const v = cell.get(f + ' ' + st) || 0;
+      const rect = el('rect', { x: m.l + x * cw + 1, y: m.t + y * chh + 1,
+        width: cw - 2, height: chh - 2, rx: 3,
+        fill: v ? shade(v) : 'var(--surface-2)' }, svg);
+      if (!v) return;
+      rect.style.cursor = 'pointer';
+      rect.addEventListener('pointermove', ev => showTip(ev.clientX, ev.clientY, f, [
+        { color: colorOf(sp), value: fmt(v), name: 'adults' },
+        { value: st, name: 'stock' }]));
+      rect.addEventListener('pointerleave', hideTip);
+    });
+  });
+  renderLegend($('l-stock'), [{ name: A.species[sp] + ' — darker means more fish',
+                                color: colorOf(sp) }], true);
+  $('stock-note').textContent =
+    A.species[sp] + ': the ' + stks.length + ' biggest stocks against the ' +
+    facs.length + ' busiest racks that handled them, over the selected seasons. ' +
+    'A column with one dark cell is a single-stock programme; a row spread across ' +
+    'many columns is a stock reared in several places.';
+  renderTable($('t-stock'),
+    [{ label: 'Stock', left: true, get: r => r.st },
+     { label: 'Racks', get: r => r.n },
+     { label: 'Adults', get: r => fmt(r.v) },
+     { label: 'Where', left: true, get: r => r.where }],
+    stks.map(st => {
+      const at = facs.filter(f => cell.get(f + ' ' + st));
+      return { st, n: at.length, v: stkTot.get(st),
+               where: at.slice(0, 4).join(', ') +
+                      (at.length > 4 ? ' +' + (at.length - 4) : '') };
+    }));
+}
+
+function renderTransfers() {
+  const T = RAW.transfers;
+  const svg = $('c-xfer');
+  clear(svg);
+  if (!T) {
+    $('xfer-note').textContent = 'No transfers recovered from this data.';
+    return;
+  }
+  const TC = Object.fromEntries(T.cols.map((c, i) => [c, i]));
+  const wantSp = new Set([...state.species].map(i => A.species[i]));
+  const edges = new Map();
+  for (const r of T.rows) {
+    if (r[TC.year] < state.from || r[TC.year] > state.to) continue;
+    if (wantSp.size && !wantSp.has(T.species[r[TC.sp]])) continue;
+    const k = r[TC.from] + '>' + r[TC.to];
+    const e = edges.get(k) || { from: r[TC.from], to: r[TC.to], n: 0,
+                                sp: new Set(), yrs: new Set() };
+    e.n += r[TC.fish];
+    e.sp.add(T.species[r[TC.sp]]);
+    e.yrs.add(r[TC.year]);
+    edges.set(k, e);
+  }
+  const list = [...edges.values()].sort((a, b) => b.n - a.n);
+  if (!list.length) {
+    $('xfer-note').textContent = 'No transfers in this selection.';
+    return;
+  }
+
+  /* An arc diagram: hatcheries on a line, movements as arcs above it. At this
+     density that stays readable in a way a force-directed tangle would not. */
+  const nodes = [...new Set(list.flatMap(e => [e.from, e.to]))];
+  const vol = new Map();
+  for (const e of list) {
+    vol.set(e.from, (vol.get(e.from) || 0) + e.n);
+    vol.set(e.to, (vol.get(e.to) || 0) + e.n);
+  }
+  nodes.sort((a, b) => (vol.get(b) || 0) - (vol.get(a) || 0));
+  const shown = nodes.slice(0, 30);
+  const pos = new Map(shown.map((n, i) => [n, i]));
+  const drawn = list.filter(e => pos.has(e.from) && pos.has(e.to)).slice(0, 90);
+
+  const Wd = width(svg), m = { t: 14, r: 20, b: 150, l: 20 };
+  const H = 300;
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', '0 0 ' + Wd + ' ' + H);
+  const iw = Wd - m.l - m.r;
+  const X = i => m.l + (shown.length === 1 ? iw / 2 : (i / (shown.length - 1)) * iw);
+  const base = H - m.b;
+  const maxN = Math.max(...drawn.map(e => e.n));
+
+  for (const e of drawn) {
+    const x1 = X(pos.get(e.from)), x2 = X(pos.get(e.to));
+    const r = Math.abs(x2 - x1) / 2, cx = (x1 + x2) / 2;
+    const h = Math.min(base - m.t, r * 0.9);
+    const w = 1 + Math.sqrt(e.n / maxN) * 5;
+    const arc = el('path', {
+      d: 'M' + x1 + ' ' + base + ' Q' + cx + ' ' + (base - h * 2) + ' ' + x2 + ' ' + base,
+      fill: 'none', stroke: cssv('--s1'), 'stroke-width': w.toFixed(1),
+      'stroke-opacity': .42, 'stroke-linecap': 'round' }, svg);
+    arc.style.cursor = 'pointer';
+    arc.addEventListener('pointermove', ev => showTip(ev.clientX, ev.clientY,
+      T.facilities[e.from] + ' → ' + T.facilities[e.to], [
+        { color: cssv('--s1'), value: fmt(e.n), name: 'fish moved' },
+        { value: [...e.sp].join(', '), name: 'species' },
+        { value: e.yrs.size + ' season' + (e.yrs.size > 1 ? 's' : ''),
+          name: 'recorded in' }]));
+    arc.addEventListener('pointerleave', hideTip);
+  }
+  el('line', { class: 'axis-line', x1: m.l, x2: m.l + iw, y1: base, y2: base }, svg);
+  shown.forEach((n, i) => {
+    el('circle', { cx: X(i), cy: base, r: 3.5, fill: cssv('--ink-3') }, svg);
+    const tx = X(i);
+    el('text', { class: 'tick', x: tx, y: base + 12, 'text-anchor': 'end',
+                 transform: 'rotate(-58 ' + tx + ' ' + (base + 12) + ')' }, svg)
+      .textContent = T.facilities[n];
+  });
+  renderLegend($('l-xfer'), [{ name: 'thicker arc = more fish moved',
+                               color: cssv('--s1') }]);
+  const total = list.reduce((a, e) => a + e.n, 0);
+  $('xfer-note').textContent =
+    fmt(total) + ' fish moved along ' + list.length + ' routes between ' +
+    nodes.length + ' hatcheries in this selection. The reports count fish shipped ' +
+    'out but name the destination only in the comment beside it, so these edges are ' +
+    'read from that text — a movement with no comment is not counted here.';
+  renderTable($('t-xfer'),
+    [{ label: 'From', left: true, get: e => T.facilities[e.from] },
+     { label: 'To', left: true, get: e => T.facilities[e.to] },
+     { label: 'Fish', get: e => fmt(e.n) },
+     { label: 'Species', left: true, get: e => [...e.sp].join(', ') },
+     { label: 'Seasons', get: e => e.yrs.size }],
+    list);
+}
+</script>
+
+<script>
+"use strict";
+/* ===================================================================
+   Every rack at a glance, and a profile for the one selected
+   =================================================================== */
+function renderAllFacilities(rows, years) {
+  const host = $('allfac');
+  clear(host);
+  const tot = new Map(), grid = new Map(), spMix = new Map();
+  for (const r of rows) {
+    tot.set(r[C.fac], (tot.get(r[C.fac]) || 0) + r[C.adults]);
+    const k = r[C.fac] + ':' + r[C.year];
+    grid.set(k, (grid.get(k) || 0) + r[C.adults]);
+    const s = r[C.fac] + '|' + r[C.sp];
+    spMix.set(s, (spMix.get(s) || 0) + r[C.adults]);
+  }
+  const ranked = [...tot.entries()].filter(e => e[1] > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const pending = [], tbl = [];
+  for (const [fac, total] of ranked) {
+    const vals = years.map(y => grid.get(fac + ':' + y) || 0);
+    let topSp = null, topV = -1;
+    for (const sp of SP_ORDER) {
+      const v = spMix.get(fac + '|' + sp) || 0;
+      if (v > topV) { topV = v; topSp = sp; }
+    }
+    const max = Math.max(...vals);
+    const last = vals[vals.length - 1];
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    tbl.push({ fac, total, last, mean, max,
+               peak: years[vals.indexOf(max)], topSp });
+
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'facmini';
+    card.setAttribute('aria-label', 'Show ' + A.facilities[fac]);
+    const head = document.createElement('div');
+    head.className = 'facmini-head';
+    const nm = document.createElement('span');
+    nm.className = 'facmini-name';
+    nm.textContent = A.facilities[fac];
+    const vv = document.createElement('span');
+    vv.className = 'facmini-val';
+    vv.textContent = compact(total);
+    head.append(nm, vv);
+    card.appendChild(head);
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'plot');
+    svg.setAttribute('height', 34);
+    card.appendChild(svg);
+    host.appendChild(card);
+    card.addEventListener('click', () => {
+      state.facility = fac;
+      const sel = $('fac-select');
+      if (sel) sel.value = fac;
+      renderFacDetail(rowsInScope(), yearsInScope());
+      $('fac-profile').scrollIntoView({ block: 'center' });
+    });
+    pending.push({ svg, vals, topSp });
+  }
+
+  /* draw once every card is laid out, so each measures its real width */
+  for (const { svg, vals, topSp } of pending) {
+    const Wd = width(svg), H = 34, pad = 2;
+    svg.setAttribute('viewBox', '0 0 ' + Wd + ' ' + H);
+    const max = Math.max(1, ...vals);
+    const X = i => pad + (vals.length === 1 ? 0 : (i / (vals.length - 1)) * (Wd - pad * 2));
+    const Y = v => H - pad - (v / max) * (H - pad * 2);
+    let d = '';
+    vals.forEach((v, i) => { d += (i ? 'L' : 'M') + X(i) + ' ' + Y(v); });
+    el('path', { d: d + 'L' + X(vals.length - 1) + ' ' + (H - pad) + 'L' + X(0) + ' ' +
+                    (H - pad) + 'Z', fill: colorOf(topSp), 'fill-opacity': .12 }, svg);
+    el('path', { class: 'serie', d, stroke: colorOf(topSp), 'stroke-width': 1.5 }, svg);
+    el('circle', { cx: X(vals.length - 1), cy: Y(vals[vals.length - 1]), r: 2.5,
+                   fill: colorOf(topSp) }, svg);
+  }
+
+  $('allfac-note').textContent =
+    ranked.length + ' racks with fish in this selection, each on its own scale so a ' +
+    'small hatchery is as legible as a large one. Ordered by total size. Click one to ' +
+    'open it below.';
+  renderTable($('t-allfac'),
+    [{ label: '#', get: (r) => r.rank, left: true },
+     { label: 'Facility', left: true, get: r => A.facilities[r.fac] },
+     { label: 'Total adults', get: r => fmt(r.total) },
+     { label: 'Latest season', get: r => fmt(r.last) },
+     { label: 'Season mean', get: r => fmt(Math.round(r.mean)) },
+     { label: 'Best season', get: r => season(r.peak) },
+     { label: 'Largest run', left: true, get: r => A.species[r.topSp] }],
+    tbl.map((r, i) => ({ ...r, rank: i + 1 })));
+}
+
+/** A short profile above the facility chart: where it is, what it handles. */
+function renderFacProfile(fac, rows, years) {
+  const host = $('fac-profile');
+  if (!host) return;
+  clear(host);
+  if (fac == null) return;
+  const mine = rows.filter(r => r[C.fac] === fac);
+  if (!mine.length) return;
+  const g = (RAW.geo && RAW.geo.rows[fac]) || null;
+  const gc = RAW.geo ? Object.fromEntries(RAW.geo.cols.map((c, i) => [c, i])) : {};
+
+  const adults = mine.reduce((a, r) => a + r[C.adults], 0);
+  const eggs = mine.reduce((a, r) => a + r[C.eggtake], 0);
+  const ys = [...new Set(mine.map(r => r[C.year]))].sort((a, b) => a - b);
+  const spTot = new Map();
+  for (const r of mine) spTot.set(r[C.sp], (spTot.get(r[C.sp]) || 0) + r[C.adults]);
+  const sps = [...spTot.entries()].filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
+  const stocks = [...new Set(mine.map(r => A.stocks[r[C.stock]]).filter(Boolean))];
+
+  let fateBits = null;
+  if (FATE) {
+    const fi = fateFacIdx.get(A.facilities[fac]);
+    if (fi != null) {
+      let t = 0, d = 0, sp2 = 0, sur = 0, rel = 0;
+      for (const r of FATE.rows) {
+        if (r[FC.fac] !== fi) continue;
+        if (r[FC.year] < state.from || r[FC.year] > state.to) continue;
+        t += r[FC.trapped]; d += r[FC.mortality];
+        sp2 += r[FC.lethal_spawned] + r[FC.live_spawned];
+        sur += r[FC.surplus]; rel += r[FC.released];
+      }
+      if (t) fateBits = { t, d, sp2, sur, rel };
+    }
+  }
+  let moved = null;
+  if (RAW.transfers) {
+    const T = RAW.transfers;
+    const TC = Object.fromEntries(T.cols.map((c, i) => [c, i]));
+    const idx = T.facilities.indexOf(A.facilities[fac]);
+    if (idx >= 0) {
+      let out = 0, inn = 0;
+      const partners = new Set();
+      for (const r of T.rows) {
+        if (r[TC.year] < state.from || r[TC.year] > state.to) continue;
+        if (r[TC.from] === idx) { out += r[TC.fish]; partners.add(T.facilities[r[TC.to]]); }
+        if (r[TC.to] === idx) { inn += r[TC.fish]; partners.add(T.facilities[r[TC.from]]); }
+      }
+      if (out || inn) moved = { out, inn, partners: [...partners] };
+    }
+  }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'profile';
+  const add = (label, value, sub) => {
+    const d = document.createElement('div');
+    d.className = 'pf';
+    const a = document.createElement('span'); a.className = 'pf-l'; a.textContent = label;
+    const b = document.createElement('span'); b.className = 'pf-v'; b.textContent = value;
+    d.append(a, b);
+    if (sub) {
+      const c = document.createElement('span');
+      c.className = 'pf-s'; c.textContent = sub;
+      d.appendChild(c);
+    }
+    wrap.appendChild(d);
+  };
+  add('Adults handled', compact(adults),
+      ys.length + ' season' + (ys.length > 1 ? 's' : '') + ', ' +
+      season(ys[0]) + ' to ' + season(ys[ys.length - 1]));
+  add('Egg take', compact(eggs), fmt(eggs) + ' eggs');
+  add('Runs handled', String(sps.length),
+      sps.slice(0, 3).map(e => A.species[e[0]]).join(', ') +
+      (sps.length > 3 ? ' +' + (sps.length - 3) : ''));
+  add('Stocks', String(stocks.length),
+      stocks.slice(0, 2).join(', ') + (stocks.length > 2 ? ' +' + (stocks.length - 2) : ''));
+  if (fateBits)
+    add('Died before spawning', (fateBits.d / fateBits.t * 100).toFixed(1) + '%',
+        fmt(fateBits.sp2) + ' spawned, ' + fmt(fateBits.rel) + ' passed upstream');
+  if (moved)
+    add('Fish moved', compact(moved.out + moved.inn),
+        fmt(moved.out) + ' out, ' + fmt(moved.inn) + ' in, ' +
+        moved.partners.length + ' partner rack' + (moved.partners.length > 1 ? 's' : ''));
+  if (g)
+    add('Location', (g[gc.county] || '—') + ' Co.',
+        'WRIA ' + (g[gc.wria] ?? '—') + ' · ' + (g[gc.waterbody] || '') +
+        (g[gc.elev_ft] != null ? ' · ' + fmt(g[gc.elev_ft]) + ' ft' : ''));
+  host.appendChild(wrap);
+}
+</script>
 
 <script>
 "use strict";

@@ -58,10 +58,13 @@ async def main():
                     'document.documentElement.scrollWidth - document.documentElement.clientWidth')
                 if ov > 0:
                     bad(f'{w}px {scheme}: {t} overflows by {ov}px')
+                # a chart inside a hidden card is deliberately not drawn (a card can
+                # hide itself and explain why), so only count visible ones
                 empty = await pg.evaluate(
                     f'''(() => {{const s=document.querySelector('#panel-{t}');
                         return [...s.querySelectorAll('svg.plot')]
-                          .filter(x => x.childElementCount === 0).length;}})()''')
+                          .filter(x => x.childElementCount === 0
+                                    && x.getClientRects().length > 0).length;}})()''')
                 if empty:
                     bad(f'{w}px {scheme}: {t} has {empty} empty chart(s)')
             if errs:

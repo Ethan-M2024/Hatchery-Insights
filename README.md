@@ -117,12 +117,13 @@ runs anything locally.
 |---|---|
 | **Overview** | Statewide totals by season, one line per species; region and hatchery-vs-wild composition |
 | **Species** | Small multiples with each species' peak season; spring/summer/fall/winter runs broken out |
-| **Facilities** | The busiest racks, per-facility history, and a picker to compare up to six hatcheries side by side |
-| **Run timing** | Cumulative arrival curves by week — when the fish actually show up, and how each season compares |
+| **Facilities** | The busiest racks, a sparkline for every rack at once, a profile and history for any one of them, and a picker to compare up to six |
+| **Run timing** | How the season in progress is tracking against the range of past seasons, plus cumulative arrival curves by week — when the fish actually show up, and how each season compares |
 | **Egg take** | Egg take against the Future Brood Document goal, and the programmes furthest below it |
 | **At the rack** | What became of every fish — spawned, passed upstream, surplussed, or dead before spawning — plus pre-spawn mortality, eggs per spawner, and wild-origin share |
-| **Trends** | Mann-Kendall trend tests with Sen's slope, each season against its trailing ten-season mean, run-timing shift, and a jack-based forecast |
+| **Trends** | Mann-Kendall trend tests with Sen's slope, each season against its trailing ten-season mean, run-timing shift, brood-year return per egg, and a jack-based forecast |
 | **Map** | Every hatchery placed on Washington, sized by return and coloured by its largest run, plus a watershed (WRIA) rollup |
+| **Programs** | Which stocks are handled at which racks, and the network of fish moved between hatcheries |
 | **Data** | All rows, sortable and searchable, with exports |
 
 Every chart has a **Table** button showing the same numbers, and the whole thing works
@@ -232,6 +233,23 @@ WDFW's reports, not of this extraction:
   this season forward. On the current record that is coho (r=0.64 vs 0.46) and sockeye
   (0.53 vs 0.00); for Chinook and steelhead persistence is as good, and the table says
   so rather than hiding it.
+
+### Notes on the newer views
+
+- **Season progress** compares the run under way against the 10th–90th percentile of
+  completed seasons *at the same week*, so a part-season is never measured against
+  whole ones. It hides itself, with an explanation, when a run has not started yet or
+  there are too few past seasons to form a range.
+- **Brood-year return per egg** divides adults returning three, four and five years
+  later by the egg take that produced them. It is a productivity measure, not a
+  survival rate: the reports do not say how many of those eggs were released, nor
+  which returning fish came from which hatchery.
+- **Transfers** are recovered from the comment beside the shipped count ("Shipped to
+  Speelyai Hatchery"), because no column names the destination. A movement recorded
+  without a comment is not counted, so this is a floor rather than a total.
+- **Watershed colouring** on the map groups racks by WRIA and draws the area their own
+  points enclose. WRIA boundaries are not published with the escapement data, so that
+  shape is an extent, not a border.
 
 ### Reading the numbers
 
