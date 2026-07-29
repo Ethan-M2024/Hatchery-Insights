@@ -25,7 +25,7 @@ WEEKLY_CACHE = os.path.join(CACHE, 'weekly_parse_cache.json.gz')
 
 TEMPLATE = os.path.join(SRC, 'template.html')
 DASHBOARD = os.path.join(DOCS, 'index.html')
-RUN_LOG = os.path.join(DATA, 'last_run.log')
+RUN_LOG = os.path.join(CACHE, 'last_run.log')
 
 
 def ensure_dirs():
@@ -39,10 +39,14 @@ def open_text(path, mode='r', **kw):
     if str(path).endswith('.gz'):
         if 'b' in mode:
             raise ValueError('use open_text for text modes only')
-        return io.TextIOWrapper(
-            gzip.open(path, mode.replace('t', '') + 'b',
-                      **({'compresslevel': 9} if 'w' in mode else {})),
-            encoding=kw['encoding'], newline=kw.get('newline', ''))
+        if 'w' in mode:
+            # mtime=0 keeps the bytes deterministic, so unchanged data does not look
+            # modified to git and the weekly refresh only commits real changes
+            raw = gzip.GzipFile(filename=path, mode='wb', compresslevel=9, mtime=0)
+        else:
+            raw = gzip.open(path, mode.replace('t', '') + 'b')
+        return io.TextIOWrapper(raw, encoding=kw['encoding'],
+                                newline=kw.get('newline', ''))
     if 'newline' not in kw:
         kw['newline'] = ''
     return open(path, mode, **kw)
