@@ -148,9 +148,6 @@ redirect to anything else is refused too:
 |---|---|
 | `wdfw.wa.gov` | the escapement reports |
 | `geodataservices.wdfw.wa.gov` | WDFW hatchery locations |
-| `waterservices.usgs.gov` | river temperature and flow |
-| `www.ncei.noaa.gov` | NOAA PDO index |
-| `www.o3d.org` | NPGO index |
 
 Each entry is a deliberate decision. Adding one widens the attack surface of every
 update, so the list is short and the reason is recorded beside it.

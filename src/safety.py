@@ -19,9 +19,6 @@ import urllib.request
 ALLOWED_HOSTS = frozenset({
     'wdfw.wa.gov',                  # the escapement reports themselves
     'geodataservices.wdfw.wa.gov',  # WDFW hatchery facility locations
-    'waterservices.usgs.gov',       # USGS streamflow and water temperature
-    'www.ncei.noaa.gov',            # NOAA Pacific Decadal Oscillation index
-    'www.o3d.org',                  # North Pacific Gyre Oscillation index
 })
 
 #: no single response may exceed this; the largest real report is about 9 MB

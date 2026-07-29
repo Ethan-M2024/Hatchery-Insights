@@ -31,7 +31,12 @@ async def main():
     DL.mkdir()
     root = pathlib.Path(__file__).resolve().parent.parent
     uri = (root / 'docs' / 'index.html').as_uri()
-    tabs = ['overview', 'species', 'facility', 'timing', 'eggs', 'map', 'data']
+    # read the tab list from the page itself, so a new tab is covered automatically
+    # and a removed one cannot leave a stale test passing
+    import re as _re
+    tabs = _re.findall(r'id="tab-([a-z]+)"',
+                       (pathlib.Path(__file__).resolve().parent.parent
+                        / 'docs' / 'index.html').read_text(encoding='utf-8'))
 
     async with async_playwright() as p:
         b = await p.chromium.launch()

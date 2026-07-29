@@ -311,10 +311,6 @@ def main(argv=None):
     ap.add_argument('--check', action='store_true',
                     help='run the validation suite only, no network')
     ap.add_argument('--no-geo', action='store_true', help='skip the location refresh')
-    ap.add_argument('--no-env', action='store_true',
-                    help='skip refreshing river and ocean conditions')
-    ap.add_argument('--refresh-env', action='store_true',
-                    help='re-fetch every USGS gauge rather than reusing the cache')
     ap.add_argument('--no-open', action='store_true', help='do not open a browser')
     a = ap.parse_args(argv)
 
@@ -360,13 +356,6 @@ def main(argv=None):
         json.dump(mapping, open(paths.FACILITY_GEO, 'w'), indent=0)
         say(f'locations: {len(mapping)}/{len(facs)} hatcheries mapped'
             + (f'; no coordinates for {unmatched}' if unmatched else ''))
-
-    if not a.no_env:
-        import environment
-        try:
-            environment.build(refresh=a.refresh_env)
-        except Exception as e:
-            say(f'river and ocean conditions unavailable: {type(e).__name__}: {e}', '!!')
 
     import build_data
     build_data.main()
