@@ -139,6 +139,22 @@ If the page is ever modified to call out to a third party, the browser blocks it
 - **No `subprocess`, `eval`, `exec`, `pickle`, or shell interpolation** in the Python.
   The parse cache is JSON, never pickle — pickle would be straightforward RCE.
 
+## Hosts this project will contact
+
+The allow-list in `src/safety.py` is the whole of it; anything else is refused, and a
+redirect to anything else is refused too:
+
+| Host | Why |
+|---|---|
+| `wdfw.wa.gov` | the escapement reports |
+| `geodataservices.wdfw.wa.gov` | WDFW hatchery locations |
+| `waterservices.usgs.gov` | river temperature and flow |
+| `www.ncei.noaa.gov` | NOAA PDO index |
+| `www.o3d.org` | NPGO index |
+
+Each entry is a deliberate decision. Adding one widens the attack surface of every
+update, so the list is short and the reason is recorded beside it.
+
 ## What was checked, and what was not
 
 **Checked and clean:** the code in this repository, its git history, the built page,

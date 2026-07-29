@@ -122,6 +122,7 @@ runs anything locally.
 | **Egg take** | Egg take against the Future Brood Document goal, and the programmes furthest below it |
 | **At the rack** | What became of every fish — spawned, passed upstream, surplussed, or dead before spawning — plus pre-spawn mortality, eggs per spawner, and wild-origin share |
 | **Trends** | Mann-Kendall trend tests with Sen's slope, each season against its trailing ten-season mean, run-timing shift, and a jack-based forecast |
+| **Conditions** | Ocean state (PDO, NPGO) against returns at every lag, river temperature and flow from USGS gauges, and the temperature-vs-mortality question asked properly |
 | **Map** | Every hatchery placed on Washington, sized by return and coloured by its largest run, plus a watershed (WRIA) rollup |
 | **Data** | All rows, sortable and searchable, with exports |
 
@@ -220,6 +221,47 @@ WDFW's reports, not of this extraction:
   this season forward. On the current record that is coho (r=0.64 vs 0.46) and sockeye
   (0.53 vs 0.00); for Chinook and steelhead persistence is as good, and the table says
   so rather than hiding it.
+
+### Environmental covariates
+
+River conditions come from **USGS gauges** (daily water temperature and discharge),
+matched to each hatchery by river name where possible and by distance otherwise —
+every match is listed with its station and distance so you can discount a weak one.
+85 of 111 hatcheries have a temperature gauge within range; all 111 have a flow gauge.
+Ocean state comes from the **PDO** (NOAA NCEI) and **NPGO** (o3d.org) indices.
+
+Two findings, one positive and one negative:
+
+- **Ocean state tracks returns.** PDO is negatively correlated with adult returns and
+  NPGO positively, for essentially every species and lag — the direction the
+  oceanography predicts, since a cool PDO and high NPGO mean a productive northern
+  California Current. Strongest are steelhead (PDO −0.61 at 3 years, NPGO +0.73 at 2)
+  and Chinook (PDO −0.54 at 3). The full 48-cell lag grid is shown rather than the
+  best cell, because choosing the best of forty-eight is how spurious findings are
+  manufactured. **The consistency of sign across species is the result worth trusting,
+  not any individual correlation.**
+- **River temperature does not explain pre-spawn mortality here — and the naive
+  analysis says the opposite.** Pooling all hatcheries gives *negative* correlations
+  (Chinook −0.32, sockeye −0.66), implying warm water saves fish. That is a confound:
+  cold upland racks have higher baseline losses for unrelated reasons, and the
+  between-site difference swamps everything. Centring each hatchery on its own mean —
+  does this rack lose more fish in its own warmer years — collapses the relationship to
+  nothing (+0.09, +0.01, −0.00, +0.08; all p>0.29). The dashboard shows **both**
+  columns, because the contrast is the point. Season-wide gauge temperature is also a
+  blunt instrument: it is not the water in the holding pond, and not confined to the
+  weeks the fish were there.
+
+### Not built, and why
+
+Three things from the same wish-list have no clean public source, and guessing at
+undocumented interfaces would be worse than leaving them out:
+
+- **Smolt-to-adult return rates** need juvenile release numbers; WDFW publishes no
+  machine-readable release dataset alongside the escapement reports.
+- **Coded-wire-tag recoveries** (stray rates, fishery contribution) live in RMIS,
+  which exposes a query UI but no documented public API.
+- **Spawning escapement goals** are set across SASSI, NOAA recovery plans and
+  co-manager agreements — documents, not a dataset.
 
 ### Reading the numbers
 

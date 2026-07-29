@@ -13,8 +13,16 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-#: only these hosts may ever be contacted, whatever the page or a redirect asks for
-ALLOWED_HOSTS = frozenset({'wdfw.wa.gov', 'geodataservices.wdfw.wa.gov'})
+#: Only these hosts may ever be contacted, whatever a page or a redirect asks for.
+#: Each entry is a deliberate decision, not a convenience — adding one widens the
+#: attack surface of every update run.
+ALLOWED_HOSTS = frozenset({
+    'wdfw.wa.gov',                  # the escapement reports themselves
+    'geodataservices.wdfw.wa.gov',  # WDFW hatchery facility locations
+    'waterservices.usgs.gov',       # USGS streamflow and water temperature
+    'www.ncei.noaa.gov',            # NOAA Pacific Decadal Oscillation index
+    'www.o3d.org',                  # North Pacific Gyre Oscillation index
+})
 
 #: no single response may exceed this; the largest real report is about 9 MB
 MAX_DOWNLOAD_BYTES = 96 * 1024 * 1024

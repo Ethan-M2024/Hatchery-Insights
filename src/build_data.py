@@ -519,6 +519,44 @@ def build_fate(peaks, facmap=None):
             'species': inv(sps), 'facilities': inv(facs), 'rows': rows}
 
 
+def build_environment(facilities):
+    """River and ocean conditions, indexed to line up with the facility list."""
+    if not os.path.exists(paths.ENVIRONMENT):
+        return None
+    with open_text(paths.ENVIRONMENT) as f:
+        env = json.load(f)
+    tj, fj = env.get('temp_join', {}), env.get('flow_join', {})
+    gauges = env.get('gauges', {})
+
+    METRICS = ['t_mean_summer', 't_max7', 't_days_18', 't_days_20',
+               'q_mean', 'q_min7', 'q_max']
+    rows = []          # [facility index, season, ...metrics]
+    joins = []         # per facility: which gauges, how far
+    for n, fac in enumerate(facilities):
+        t, q = tj.get(fac), fj.get(fac)
+        joins.append([
+            t['station'] if t else None, t['km'] if t else None,
+            t['matched_on'] if t else None,
+            q['station'] if q else None, q['km'] if q else None,
+            q['matched_on'] if q else None])
+        seasons = set()
+        for j in (t, q):
+            if j:
+                seasons |= set((gauges.get(j['site'], {}).get('seasons') or {}).keys())
+        for sn in sorted(seasons):
+            tv = (gauges.get(t['site'], {}).get('seasons', {}).get(sn, {}) if t else {})
+            qv = (gauges.get(q['site'], {}).get('seasons', {}).get(sn, {}) if q else {})
+            vals = [tv.get(m) if m.startswith('t_') else qv.get(m) for m in METRICS]
+            if any(v is not None for v in vals):
+                rows.append([n, int(sn)] + vals)
+
+    return {'cols': ['fac', 'year'] + METRICS,
+            'join_cols': ['temp_station', 'temp_km', 'temp_match',
+                          'flow_station', 'flow_km', 'flow_match'],
+            'joins': joins, 'rows': rows,
+            'ocean': env.get('ocean', {}), 'meta': env.get('meta', {})}
+
+
 def latest_weekly_report_date():
     """Date of the most recent weekly report actually present in the data."""
     import datetime as _dt
@@ -647,6 +685,9 @@ def main():
                 'species': sorted(([k] + v for k, v in by_sp.items()),
                                   key=lambda x: -x[1]),
             }
+    envr = build_environment(A['facilities'])
+    if envr:
+        data['env'] = envr
     if wk and wk.get('peaks'):
         fate = build_fate(peaks, facmap)
         if fate:
@@ -691,6 +732,12 @@ def main():
           '| geocoded', (g or {}).get('n', 0))
     if data.get('fate'):
         print('fate rows (facility x species x season):', len(data['fate']['rows']))
+    if data.get('env'):
+        e = data['env']
+        nt = sum(1 for j in e['joins'] if j[0])
+        print(f"river conditions: {len(e['rows'])} facility-seasons, "
+              f"{nt} hatcheries with a temperature gauge, "
+              f"PDO {len(e['ocean'].get('pdo', {}))} yrs")
     if wk:
         print('weekly series', len(wk['series']), 'from', wk['n_reports'], 'reports',
               f"({len(wk['dropped'])} mis-segmented dropped)" if wk.get('dropped') else '')

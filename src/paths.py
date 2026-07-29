@@ -21,6 +21,7 @@ PAYLOAD = os.path.join(DATA, 'dashboard_data.json')
 FACILITY_GEO = os.path.join(DATA, 'facility_geo.json')
 GIS_FACILITIES = os.path.join(DATA, 'wdfw_facilities.json')
 OUTLINE = os.path.join(DATA, 'wa_outline.json')
+ENVIRONMENT = os.path.join(DATA, 'environment.json.gz')
 WEEKLY_CACHE = os.path.join(CACHE, 'weekly_parse_cache.json.gz')
 
 TEMPLATE = os.path.join(SRC, 'template.html')
