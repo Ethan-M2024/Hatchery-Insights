@@ -1,0 +1,2602 @@
+<title>WDFW Hatchery Escapement, 1998–2025</title>
+
+<style>
+:root {
+  color-scheme: light;
+  --plane:        #eef1f0;
+  --surface:      #fbfcfc;
+  --surface-2:    #f4f6f5;
+  --ink:          #0d1413;
+  --ink-2:        #4c5654;
+  --ink-3:        #7d8785;
+  --rule:         #dde2e0;
+  --grid:         #e6eae8;
+  --axis:         #c4ccc9;
+  --accent:       #0f5f56;
+  --accent-soft:  #dcece9;
+  --land:         #e7ecea;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a;
+  --s4: #eda100; --s5: #e87ba4; --s6: #008300;
+  --good: #0ca30c; --warn: #fab219; --crit: #d03b3b;
+  --shadow: 0 1px 2px rgba(13,20,19,.05), 0 8px 24px -16px rgba(13,20,19,.25);
+  --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --plane:       #0a100f;
+    --surface:     #151b1a;
+    --surface-2:   #1c2322;
+    --ink:         #f2f5f4;
+    --ink-2:       #b3bdba;
+    --ink-3:       #7f8a87;
+    --rule:        #26302e;
+    --grid:        #222b2a;
+    --axis:        #36413f;
+    --accent:      #4fd1bd;
+    --accent-soft: #14312e;
+    --land:        #202826;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+    --s4: #c98500; --s5: #d55181; --s6: #008300;
+    --good: #0ca30c; --warn: #fab219; --crit: #e06060;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane:       #0a100f;
+  --surface:     #151b1a;
+  --surface-2:   #1c2322;
+  --ink:         #f2f5f4;
+  --ink-2:       #b3bdba;
+  --ink-3:       #7f8a87;
+  --rule:        #26302e;
+  --grid:        #222b2a;
+  --axis:        #36413f;
+  --accent:      #4fd1bd;
+  --accent-soft: #14312e;
+  --land:        #202826;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70;
+  --s4: #c98500; --s5: #d55181; --s6: #008300;
+  --good: #0ca30c; --warn: #fab219; --crit: #e06060;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--plane); color: var(--ink);
+  font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 20px 72px; }
+
+/* ---------- masthead ---------- */
+header.top { padding: 40px 0 22px; border-bottom: 1px solid var(--rule); }
+.eyebrow {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--ink-3); margin: 0 0 10px;
+}
+h1 {
+  margin: 0; font-size: clamp(28px, 4.4vw, 44px); line-height: 1.08;
+  letter-spacing: -.022em; font-weight: 660; text-wrap: balance; max-width: 20ch;
+}
+.standfirst {
+  margin: 10px 0 0; max-width: 66ch; color: var(--ink-2); font-size: 16.5px;
+  line-height: 1.45;
+}
+.standfirst a { color: var(--accent); text-underline-offset: 3px; }
+
+/* ---------- hero band ---------- */
+.hero {
+  display: grid; gap: 20px; margin: 24px 0 0;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.95fr); align-items: end;
+}
+@media (max-width: 820px) { .hero { grid-template-columns: 1fr; } }
+.hero-figure .label {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.hero-figure .value {
+  font-size: clamp(46px, 7vw, 68px); font-weight: 640; letter-spacing: -.03em;
+  line-height: 1; margin: 6px 0 4px;
+}
+.hero-figure .sub { color: var(--ink-2); font-size: 14px; }
+.hero-spark { min-width: 0; }
+
+/* ---------- filter row ---------- */
+.filters {
+  position: sticky; top: 0; z-index: 30; background: var(--plane);
+  border-bottom: 1px solid var(--rule);
+  display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: flex-end;
+  padding: 12px 0 12px; margin-bottom: 22px;
+}
+/* stuck to the top the bar has to earn its height: the species chips drop to a
+   single scrolling line so the filters never swallow the content below */
+.filters.stuck { box-shadow: 0 6px 16px -14px rgba(0,0,0,.5); }
+.filters.stuck .chips {
+  flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px;
+  scrollbar-width: thin; min-width: 0; max-width: 100%;
+}
+.filters.stuck .chips .chip { flex: none; }
+.filters.stuck .species-field > span { display: none; }
+/* full row, so the horizontal scroller is bounded by the page and never pushes it wide */
+.filters.stuck .species-field { flex: 1 1 100%; min-width: 0; max-width: 100%; }
+@media (min-width: 900px) {
+  .filters.stuck .species-field { flex: 1 1 320px; }
+}
+.field { display: flex; flex-direction: column; gap: 5px; }
+.species-field { flex: 1 0 100%; }
+.species-field > span { margin-top: 2px; }
+.chip.more { font-family: var(--mono); font-size: 11.5px; letter-spacing: .04em; }
+.field > span {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+select, input[type="search"], button.ghost {
+  font-family: var(--sans); font-size: 13.5px; color: var(--ink);
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 7px;
+  padding: 7px 10px; min-height: 34px;
+}
+select { min-width: 148px; }
+input[type="search"] { min-width: 190px; }
+button.ghost { cursor: pointer; }
+button.ghost:hover { background: var(--surface-2); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  font-size: 13px; padding: 6px 11px 6px 9px; border-radius: 999px;
+  border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2);
+  user-select: none;
+}
+.chip .key { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.chip[aria-pressed="true"] { color: var(--ink); border-color: var(--axis); background: var(--surface-2); }
+.chip[aria-pressed="false"] .key { background: var(--axis) !important; }
+.chip[aria-pressed="false"] { opacity: .58; }
+:is(select, input, button, .chip, .tab, a):focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+/* ---------- tabs ---------- */
+nav.tabs { display: flex; gap: 2px; flex-wrap: wrap; margin: 0 0 -1px; }
+.tab {
+  appearance: none; border: 1px solid transparent; border-bottom: none;
+  background: none; cursor: pointer; font: inherit; font-size: 14px;
+  color: var(--ink-3); padding: 9px 15px; border-radius: 8px 8px 0 0;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] {
+  color: var(--ink); background: var(--surface); border-color: var(--rule);
+  font-weight: 560;
+}
+
+/* ---------- cards ---------- */
+.grid { display: grid; gap: 18px; }
+.cols-2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
+.card {
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 12px;
+  padding: 18px 18px 14px; box-shadow: var(--shadow); min-width: 0;
+}
+.card > h2 {
+  margin: 0; font-size: 15.5px; font-weight: 600; letter-spacing: -.01em;
+}
+.card > .note { margin: 3px 0 14px; color: var(--ink-3); font-size: 12.5px; }
+.card-head {
+  display: flex; gap: 10px 12px; align-items: flex-start;
+  justify-content: space-between; flex-wrap: wrap;
+}
+.card-head > * { min-width: 0; }
+/* the control cluster beside a card title wraps and shrinks rather than
+   pushing the page sideways on a phone */
+.card-head > div:last-child { flex-wrap: wrap; max-width: 100%; }
+.card-head select { min-width: 0; max-width: 100%; flex: 1 1 auto; }
+.tbl-toggle {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); background: none;
+  border: 1px solid var(--rule); border-radius: 6px; padding: 4px 8px;
+  cursor: pointer; flex: none;
+}
+.tbl-toggle:hover { color: var(--ink); }
+
+/* ---------- stat tiles ---------- */
+.tiles { display: grid; gap: 18px 20px; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); }
+.tile .label {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3);
+}
+.tile .value { font-size: 30px; font-weight: 620; letter-spacing: -.022em; margin: 5px 0 2px; }
+.tile .sub { font-size: 12.5px; color: var(--ink-2); }
+.delta { font-family: var(--mono); font-size: 12px; }
+.delta.up { color: var(--good); } .delta.down { color: var(--crit); }
+
+/* ---------- charts ---------- */
+.plot { width: 100%; display: block; overflow: visible; }
+.plot text { font-family: var(--sans); }
+.tick { font-size: 11px; fill: var(--ink-3); font-variant-numeric: tabular-nums; }
+.axis-line { stroke: var(--axis); stroke-width: 1; }
+.gridline { stroke: var(--grid); stroke-width: 1; }
+.serie { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.endcap { stroke: var(--surface); stroke-width: 2; }
+.dlabel { font-size: 11.5px; font-weight: 560; fill: var(--ink); }
+.hit { fill: transparent; cursor: crosshair; }
+.crosshair { stroke: var(--axis); stroke-width: 1; pointer-events: none; }
+.bar { transition: opacity .12s ease; }
+.bar:hover { opacity: .78; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 12px 0 0; }
+.legend .item { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--ink-2); }
+.legend .swatch { width: 14px; height: 3px; border-radius: 2px; }
+.legend .swatch.box { width: 11px; height: 11px; border-radius: 3px; }
+
+.tip {
+  position: fixed; z-index: 60; pointer-events: none; opacity: 0;
+  transition: opacity .1s ease; background: var(--surface);
+  border: 1px solid var(--rule); border-radius: 9px; box-shadow: var(--shadow);
+  padding: 9px 11px; font-size: 12.5px; min-width: 150px; max-width: 260px;
+}
+.tip .t-head {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); margin-bottom: 6px;
+}
+.tip .t-row { display: flex; align-items: baseline; gap: 8px; margin-top: 3px; }
+.tip .t-key { width: 12px; height: 2.5px; border-radius: 2px; flex: none; transform: translateY(-3px); }
+.tip .t-val { font-family: var(--mono); font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.tip .t-name { color: var(--ink-2); }
+
+/* ---------- tables ---------- */
+.tbl-wrap { overflow-x: auto; margin-top: 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: right; padding: 6px 10px; white-space: nowrap; }
+th:first-child, td:first-child, th.l, td.l { text-align: left; }
+thead th {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-3); font-weight: 500;
+  border-bottom: 1px solid var(--rule); position: sticky; top: 0; background: var(--surface);
+}
+tbody td { border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+tbody tr:hover td { background: var(--surface-2); }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--ink); }
+.hidden { display: none !important; }
+
+
+/* ---------- map ---------- */
+.land { fill: var(--land); stroke: var(--axis); stroke-width: 1; stroke-linejoin: round; }
+.site { stroke: var(--surface); stroke-width: 1.5; cursor: pointer; }
+.site:hover { stroke: var(--ink); stroke-width: 2; }
+.site-hit { fill: transparent; cursor: pointer; }
+.scalebar { stroke: var(--ink-3); stroke-width: 1; }
+
+/* ---------- export ---------- */
+.exp-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.exp {
+  display: flex; gap: 11px; align-items: flex-start; text-align: left;
+  font: inherit; cursor: pointer; padding: 12px 13px; border-radius: 10px;
+  border: 1px solid var(--rule); background: var(--surface); color: var(--ink);
+}
+.exp:hover { background: var(--surface-2); border-color: var(--axis); }
+.exp .ico {
+  font-family: var(--mono); font-size: 10px; letter-spacing: .04em; font-weight: 600;
+  border-radius: 5px; padding: 4px 5px; flex: none; color: var(--surface);
+  min-width: 38px; text-align: center;
+}
+.exp b { display: block; font-size: 13.5px; font-weight: 600; }
+.exp span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+
+/* ---------- print ---------- */
+@media print {
+  @page { margin: 14mm; }
+  html, body { background: #fff !important; color: #000 !important; }
+  .filters, nav.tabs, .tbl-toggle, .picker, #exp-buttons, #exp-scope,
+  .tip, button, select, input { display: none !important; }
+  .wrap { max-width: none; padding: 0; }
+  section[role="tabpanel"].hidden { display: none !important; }
+  .card {
+    box-shadow: none; border: 1px solid #ccc; break-inside: avoid;
+    page-break-inside: avoid; margin-bottom: 10mm;
+  }
+  .tbl-wrap { max-height: none !important; overflow: visible !important; }
+  .tbl-wrap.hidden { display: block !important; }
+  thead th { position: static; }
+  .grid, .cols-2 { display: block; }
+  .card + .card { margin-top: 8mm; }
+  a[href^="http"]::after { content: " (" attr(href) ")"; font-size: 9pt; color: #555; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }
+
+/* ---------- hatchery picker ---------- */
+.picker { display: grid; gap: 10px; margin: 2px 0 16px; }
+.picker-bar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.picker-bar input[type="search"] { flex: 1 1 220px; }
+.picker-list {
+  display: grid; gap: 2px; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  max-height: 178px; overflow-y: auto; padding: 6px;
+  border: 1px solid var(--rule); border-radius: 9px; background: var(--surface-2);
+}
+.opt {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  font: inherit; font-size: 13px; color: var(--ink-2); cursor: pointer;
+  background: none; border: 1px solid transparent; border-radius: 6px; padding: 5px 8px;
+}
+.opt:hover { background: var(--surface); color: var(--ink); }
+.opt[aria-selected="true"] { color: var(--ink); font-weight: 550; }
+.opt .mark {
+  width: 13px; height: 13px; border-radius: 4px; flex: none;
+  border: 1.5px solid var(--axis); display: grid; place-items: center;
+  font-size: 10px; line-height: 1; color: var(--surface);
+}
+.opt[aria-selected="true"] .mark { border-color: transparent; }
+.opt .vol {
+  margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.opt[disabled] { opacity: .4; cursor: not-allowed; }
+.chip.sel { padding-right: 7px; }
+.chip.sel .x { color: var(--ink-3); font-size: 15px; line-height: 1; padding: 0 2px; }
+.chip.sel:hover .x { color: var(--ink); }
+.empty-note {
+  color: var(--ink-3); font-size: 13px; padding: 30px 0 34px; text-align: center;
+}
+
+.meter { height: 6px; border-radius: 3px; background: var(--grid); overflow: hidden; min-width: 60px; }
+.meter > i { display: block; height: 100%; border-radius: 3px; }
+
+footer.foot {
+  margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--rule);
+  color: var(--ink-3); font-size: 12.5px; display: grid; gap: 6px;
+}
+footer.foot a { color: var(--accent); }
+code { font-family: var(--mono); font-size: .92em; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+
+<header class="top">
+  <p class="eyebrow">Washington Dept. of Fish &amp; Wildlife · Adult Report Database</p>
+  <p class="standfirst">
+    Every fish counted back to a WDFW hatchery rack or trap, 1998–99 through 2024–25,
+    extracted from the 27 annual <em>Final Hatchery Escapement Reports</em> and
+    <span id="wk-count">the</span> weekly in-season reports.
+    <a href="https://wdfw.wa.gov/fishing/management/hatcheries/escapement" target="_blank" rel="noopener">Source&nbsp;↗</a>
+  </p>
+
+  <div class="hero">
+    <div class="hero-figure">
+      <div class="label">2024–25 adults trapped</div>
+      <div class="value" id="hero-val">—</div>
+      <div class="sub" id="hero-sub">—</div>
+    </div>
+    <div class="hero-spark"><svg class="plot" id="hero-spark" height="118" role="img"
+      aria-label="Total adult escapement by season, 1998-99 to 2024-25"></svg></div>
+  </div>
+</header>
+
+<div class="filters" role="group" aria-label="Filters">
+  <label class="field"><span>Seasons</span>
+    <select id="f-from"></select>
+  </label>
+  <label class="field"><span>through</span>
+    <select id="f-to"></select>
+  </label>
+  <label class="field"><span>Region</span>
+    <select id="f-region"><option value="">All regions</option></select>
+  </label>
+  <label class="field"><span>Origin</span>
+    <select id="f-bo">
+      <option value="">All origins</option>
+      <option value="1">Hatchery (H)</option>
+      <option value="2">Wild (W)</option>
+      <option value="3">Mixed (M)</option>
+    </select>
+  </label>
+  <button class="ghost" id="f-reset" type="button">Reset</button>
+  <div class="field species-field">
+    <span>Species</span>
+    <div class="chips" id="f-species"></div>
+  </div>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Views">
+  <button class="tab" role="tab" id="tab-overview"  aria-controls="panel-overview"  aria-selected="true">Overview</button>
+  <button class="tab" role="tab" id="tab-species"   aria-controls="panel-species"   aria-selected="false">Species</button>
+  <button class="tab" role="tab" id="tab-facility"  aria-controls="panel-facility"  aria-selected="false">Facilities</button>
+  <button class="tab" role="tab" id="tab-timing"    aria-controls="panel-timing"    aria-selected="false">Run timing</button>
+  <button class="tab" role="tab" id="tab-eggs"      aria-controls="panel-eggs"      aria-selected="false">Egg take</button>
+  <button class="tab" role="tab" id="tab-map"       aria-controls="panel-map"       aria-selected="false">Map</button>
+  <button class="tab" role="tab" id="tab-data"      aria-controls="panel-data"      aria-selected="false">Data</button>
+</nav>
+
+<!-- ============ OVERVIEW ============ -->
+<section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" class="grid" style="gap:18px">
+  <div class="card"><div class="tiles" id="tiles"></div></div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Adults trapped by season</h2>
+        <p class="note">One line per species. Adults only — jacks (early-maturing males) are counted separately.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-trend">Table</button>
+    </div>
+    <svg class="plot" id="c-trend" height="330"></svg>
+    <div class="legend" id="l-trend"></div>
+    <div class="tbl-wrap hidden" id="t-trend"></div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Share by region</h2>
+          <p class="note">Puget Sound, Coastal and Columbia River, as a share of adults each season.</p>
+        </div>
+        <button class="tbl-toggle" data-table="t-region">Table</button>
+      </div>
+      <svg class="plot" id="c-region" height="300"></svg>
+      <div class="legend" id="l-region"></div>
+      <div class="tbl-wrap hidden" id="t-region"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Hatchery vs wild origin</h2>
+          <p class="note">Brood origin recorded at the rack. Mixed-origin rows carry egg take, not fish.</p>
+        </div>
+        <button class="tbl-toggle" data-table="t-bo">Table</button>
+      </div>
+      <svg class="plot" id="c-bo" height="300"></svg>
+      <div class="legend" id="l-bo"></div>
+      <div class="tbl-wrap hidden" id="t-bo"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SPECIES ============ -->
+<section id="panel-species" role="tabpanel" aria-labelledby="tab-species" class="grid hidden">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Every species, same scale of story</h2>
+        <p class="note">Small multiples — each panel on its own y-scale, peak season marked. Run type shown where WDFW distinguishes one.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-small">Table</button>
+    </div>
+    <div class="grid cols-2" id="smalls" style="gap:14px"></div>
+    <div class="tbl-wrap hidden" id="t-small"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Run type within species</h2>
+        <p class="note">Spring, summer, fall and winter runs counted separately. Pick a species to break it out.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="race-species"></select>
+        <button class="tbl-toggle" data-table="t-race">Table</button>
+      </div>
+    </div>
+    <svg class="plot" id="c-race" height="320"></svg>
+    <div class="legend" id="l-race"></div>
+    <div class="tbl-wrap hidden" id="t-race"></div>
+  </div>
+</section>
+
+<!-- ============ FACILITIES ============ -->
+<section id="panel-facility" role="tabpanel" aria-labelledby="tab-facility" class="grid hidden">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Busiest racks</h2>
+        <p class="note">Total adults over the selected seasons, coloured by the facility's largest run. Click a bar to chart it below.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-rank">Table</button>
+    </div>
+    <svg class="plot" id="c-rank"></svg>
+    <div class="legend" id="l-rank"></div>
+    <div class="tbl-wrap hidden" id="t-rank"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2 id="fac-title">Facility detail</h2>
+        <p class="note" id="fac-note">Adults by season, split by species.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="fac-select"></select>
+        <button class="tbl-toggle" data-table="t-fac">Table</button>
+      </div>
+    </div>
+    <svg class="plot" id="c-fac" height="320"></svg>
+    <div class="legend" id="l-fac"></div>
+    <div class="tbl-wrap hidden" id="t-fac"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Compare hatcheries</h2>
+        <p class="note" id="cmp-note">Pick up to six racks to chart side by side.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="cmp-measure">
+          <option value="adults">Adults trapped</option>
+          <option value="jacks">Jacks</option>
+          <option value="eggtake">Egg take</option>
+          <option value="adults_rel">Released upstream</option>
+        </select>
+        <button class="tbl-toggle" data-table="t-cmp">Table</button>
+      </div>
+    </div>
+
+    <div class="picker">
+      <div class="picker-bar">
+        <input type="search" id="cmp-q" placeholder="Search hatcheries…" aria-label="Search hatcheries">
+        <button class="ghost" id="cmp-clear" type="button">Clear all</button>
+      </div>
+      <div class="chips" id="cmp-selected" aria-live="polite"></div>
+      <div class="picker-list" id="cmp-list" role="listbox" aria-multiselectable="true"
+           aria-label="Hatcheries"></div>
+    </div>
+
+    <svg class="plot" id="c-cmp" height="340"></svg>
+    <div class="legend" id="l-cmp"></div>
+    <div class="tbl-wrap hidden" id="t-cmp"></div>
+  </div>
+</section>
+
+<!-- ============ RUN TIMING ============ -->
+<section id="panel-timing" role="tabpanel" aria-labelledby="tab-timing" class="grid hidden">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>When the fish arrive</h2>
+        <p class="note" id="timing-note">
+          Cumulative share of the season's adults, by week of the March-to-March season.
+          Built from the weekly in-season reports, which are cumulative season-to-date.
+        </p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="timing-species"></select>
+        <button class="tbl-toggle" data-table="t-timing">Table</button>
+      </div>
+    </div>
+    <svg class="plot" id="c-timing" height="360"></svg>
+    <div class="legend" id="l-timing"></div>
+    <div class="tbl-wrap hidden" id="t-timing"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Timing of the median fish</h2>
+        <p class="note">Week by which half the season's adults had been counted. A later point means a later run.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-median">Table</button>
+    </div>
+    <svg class="plot" id="c-median" height="300"></svg>
+    <div class="legend" id="l-median"></div>
+    <div class="tbl-wrap hidden" id="t-median"></div>
+  </div>
+</section>
+
+<!-- ============ EGG TAKE ============ -->
+<section id="panel-eggs" role="tabpanel" aria-labelledby="tab-eggs" class="grid hidden">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Egg take against goal</h2>
+        <p class="note">Statewide egg take as a share of the Future Brood Document goal, for rows that carry a goal.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-egg">Table</button>
+    </div>
+    <svg class="plot" id="c-egg" height="320"></svg>
+    <div class="legend" id="l-egg"></div>
+    <div class="tbl-wrap hidden" id="t-egg"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Goal attainment by program</h2>
+        <p class="note">Facility × species programs over the selected seasons, ranked by shortfall against goal.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-eggprog">Table</button>
+    </div>
+    <div class="tbl-wrap" id="t-eggprog"></div>
+  </div>
+</section>
+
+
+<!-- ============ MAP ============ -->
+<section id="panel-map" role="tabpanel" aria-labelledby="tab-map" class="grid hidden">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Where the fish come back</h2>
+        <p class="note" id="map-note">Each rack sized by adults over the selected seasons and coloured by its largest run. Click a point to compare that hatchery.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="map-basis">
+          <option value="adults">Size by adults</option>
+          <option value="eggtake">Size by egg take</option>
+          <option value="uniform">Uniform size</option>
+        </select>
+        <button class="tbl-toggle" data-table="t-map">Table</button>
+      </div>
+    </div>
+    <svg class="plot" id="c-map" height="470"></svg>
+    <div class="legend" id="l-map"></div>
+    <div class="tbl-wrap hidden" id="t-map"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>By watershed</h2>
+        <p class="note">Water Resource Inventory Areas (WRIA) are Washington's basin units. Totals over the selected seasons.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-wria">Table</button>
+    </div>
+    <svg class="plot" id="c-wria"></svg>
+    <div class="tbl-wrap hidden" id="t-wria"></div>
+  </div>
+</section>
+
+<!-- ============ DATA ============ -->
+<section id="panel-data" role="tabpanel" aria-labelledby="tab-data" class="grid hidden">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Every row</h2>
+        <p class="note" id="data-note">Facility × stock × species × season, exactly as published.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="search" id="data-q" placeholder="Filter facility or stock…" aria-label="Filter rows">
+        <button class="ghost" id="data-csv" type="button">Download CSV</button>
+      </div>
+    </div>
+    <div class="tbl-wrap" id="t-data" style="max-height:70vh;overflow-y:auto"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Export &amp; print</h2>
+        <p class="note" id="exp-note">Everything below respects the filters above. Formats open natively in Excel, Word, ArcGIS, QGIS and Google Earth.</p>
+      </div>
+    </div>
+
+    <div class="field" style="margin-bottom:14px">
+      <span>Contents</span>
+      <div class="chips" id="exp-scope" role="radiogroup" aria-label="What to export"></div>
+    </div>
+
+    <div class="exp-grid" id="exp-buttons"></div>
+
+    <p class="note" style="margin-top:16px" id="exp-detail"></p>
+  </div>
+
+</section>
+
+<footer class="foot">
+  <div><strong>Source.</strong> WDFW <a href="https://wdfw.wa.gov/fishing/management/hatcheries/escapement" target="_blank" rel="noopener">Hatchery Escapement Reports</a> — 27 annual PDFs plus the weekly in-season series. Parsed values were checked against every published statewide total in the annual reports; all <span id="recon-n">562</span> reconcile exactly.</div>
+  <div><strong>Reading these numbers.</strong> Escapement here means fish returning to a hatchery rack or trap — not the total run to a river. Fish that spawn below the rack, are caught, or pass an idle trap are not counted. Weekly figures are preliminary in-season estimates; annual figures are final.</div>
+  <div><strong>Joins.</strong> The 1998–99 and 1999–2000 reports use shorter facility names than later years; those are matched to the modern names where unambiguous, and names that the WDFW GIS layer resolves to one physical site are folded together so a hatchery's history is continuous. Egg-take goals are absent (<code>NA</code>) on many rows and are excluded from attainment rather than treated as zero.</div>
+  <div><strong>Locations.</strong> Coordinates, county, WRIA and waterbody come from the WDFW <em>HatcheryLikeFacilities</em> GIS layer (WGS84), joined to the escapement records by facility name.</div>
+  <div><strong>Known source quirks.</strong> The "trapped less released" (net) columns are published by WDFW as a separate calculation, not as a subtraction of the columns beside them — their own statewide totals fail that identity in about 30% of species-seasons. Those columns are carried through to the exports exactly as printed and are not used in any chart here. Every other column reconciles to WDFW's published statewide totals exactly.</div>
+  <div id="foot-build"></div>
+</footer>
+
+</div>
+
+<div class="tip" id="tip" role="status" aria-live="polite"></div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+"use strict";
+const RAW = JSON.parse(document.getElementById('payload').textContent);
+const A = RAW.annual, W = RAW.weekly || null;
+const C = {}; A.cols.forEach((c, i) => C[c] = i);
+const SERIES_VARS = ['--s1','--s2','--s3','--s4','--s5','--s6'];
+const cssv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- formatting ---------- */
+const nf = new Intl.NumberFormat('en-US');
+const fmt = n => nf.format(Math.round(n));
+const compact = n => {
+  const a = Math.abs(n);
+  if (a >= 1e9) return (n / 1e9).toFixed(a >= 1e10 ? 0 : 1).replace(/\.0$/, '') + 'B';
+  if (a >= 1e6) return (n / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M';
+  if (a >= 1e4) return Math.round(n / 1e3) + 'K';
+  if (a >= 1e3) return (n / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+  return fmt(n);
+};
+const season = y => `${y}–${String((y + 1) % 100).padStart(2, '0')}`;
+const BO = ['—', 'Hatchery', 'Wild', 'Mixed'];
+
+/* ---------- species ordering: salmonids first, by lifetime volume ---------- */
+const spTotals = new Map();
+for (const r of A.rows) spTotals.set(r[C.sp], (spTotals.get(r[C.sp]) || 0) + r[C.adults]);
+const PRIMARY = ['Chinook','Coho','Chum','Sockeye','Pink','Steelhead'];
+const primaryIdx = PRIMARY.map(n => A.species.indexOf(n)).filter(i => i >= 0);
+const otherIdx = [...spTotals.keys()]
+  .filter(i => !primaryIdx.includes(i) && spTotals.get(i) > 0)
+  .sort((a, b) => spTotals.get(b) - spTotals.get(a));
+const SP_ORDER = [...primaryIdx, ...otherIdx];
+/* colour follows the species, never its rank in the current filter */
+const spColorVar = new Map(primaryIdx.map((sp, i) => [sp, SERIES_VARS[i]]));
+const colorOf = sp => spColorVar.has(sp) ? cssv(spColorVar.get(sp)) : cssv('--ink-3');
+
+const YEARS = [...new Set(A.rows.map(r => r[C.year]))].sort((a, b) => a - b);
+const Y0 = YEARS[0], Y1 = YEARS[YEARS.length - 1];
+
+/* ---------- filter state ---------- */
+const state = {
+  from: Y0, to: Y1, region: '', bo: '',
+  species: new Set(primaryIdx),
+  facility: null, raceSp: primaryIdx[0],
+  compare: [], cmpQ: '', cmpMeasure: 'adults',
+  timingSp: 0, dataQ: '', sort: { key: 'adults', dir: -1 }
+};
+
+function rowsInScope() {
+  const sel = state.species;
+  return A.rows.filter(r =>
+    r[C.year] >= state.from && r[C.year] <= state.to &&
+    (sel.size === 0 || sel.has(r[C.sp])) &&
+    (state.region === '' || r[C.region] === +state.region) &&
+    (state.bo === '' || r[C.bo] === +state.bo));
+}
+
+/* ---------- tiny SVG helpers ---------- */
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag, attrs, parent) {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) if (attrs[k] != null) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+function niceTicks(max, count = 4) {
+  if (max <= 0) return [0];
+  const raw = max / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => s >= raw) || 10 * mag;
+  const out = []; for (let v = 0; v <= max * 1.0001; v += step) out.push(v);
+  return out;
+}
+function width(svg) { return svg.clientWidth || svg.parentNode.clientWidth || 640; }
+
+/* ---------- tooltip ---------- */
+const tip = document.getElementById('tip');
+function showTip(x, y, head, rows) {
+  clear(tip); tip.textContent = '';
+  const h = document.createElement('div'); h.className = 't-head'; h.textContent = head;
+  tip.appendChild(h);
+  for (const r of rows) {
+    const d = document.createElement('div'); d.className = 't-row';
+    if (r.color) {
+      const k = document.createElement('span'); k.className = 't-key';
+      k.style.background = r.color; d.appendChild(k);
+    }
+    const v = document.createElement('span'); v.className = 't-val'; v.textContent = r.value;
+    const n = document.createElement('span'); n.className = 't-name'; n.textContent = r.name;
+    d.appendChild(v); d.appendChild(n); tip.appendChild(d);
+  }
+  tip.style.opacity = '1';
+  const b = tip.getBoundingClientRect();
+  let left = x + 14, top = y - b.height / 2;
+  if (left + b.width > innerWidth - 8) left = x - b.width - 14;
+  tip.style.left = Math.max(8, left) + 'px';
+  tip.style.top = Math.min(Math.max(8, top), innerHeight - b.height - 8) + 'px';
+}
+const hideTip = () => { tip.style.opacity = '0'; };
+addEventListener('scroll', hideTip, { passive: true });
+
+/* ---------- generic multi-line chart with crosshair ---------- */
+function lineChart(svg, opts) {
+  const { xs, series, height: H = +svg.getAttribute('height'), yFmt = compact,
+          xLabel = String, valFmt = fmt, yMaxForce = null, yMin = 0, pct = false,
+          yTicks = null, ref = null } = opts;
+  clear(svg);
+  const Wd = width(svg), narrow = Wd < 560;
+  /* end labels need a gutter; on a phone the plot needs that width more */
+  const m = { t: 14, r: narrow ? 14 : 62, b: 26, l: 46 };
+  svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+  const iw = Math.max(10, Wd - m.l - m.r), ih = H - m.t - m.b;
+  let yMax = yMaxForce != null ? yMaxForce
+    : Math.max(1, ...series.flatMap(s => s.values.filter(v => v != null)));
+  const ticks = yTicks || (pct ? [0, .25, .5, .75, 1].map(v => v * yMax) : niceTicks(yMax));
+  yMax = Math.max(yMax, ticks[ticks.length - 1]);
+  const X = i => m.l + (xs.length === 1 ? iw / 2 : (i / (xs.length - 1)) * iw);
+  const Y = v => m.t + ih - ((v - yMin) / (yMax - yMin)) * ih;
+
+  for (const t of ticks) {
+    el('line', { class: 'gridline', x1: m.l, x2: m.l + iw, y1: Y(t), y2: Y(t) }, svg);
+    el('text', { class: 'tick', x: m.l - 8, y: Y(t) + 4, 'text-anchor': 'end' }, svg)
+      .textContent = yFmt(t);
+  }
+  el('line', { class: 'axis-line', x1: m.l, x2: m.l + iw, y1: Y(yMin), y2: Y(yMin) }, svg);
+  if (ref) {
+    el('line', { x1: m.l, x2: m.l + iw, y1: Y(ref.value), y2: Y(ref.value),
+                 stroke: cssv('--ink-3'), 'stroke-width': 1 }, svg);
+    el('text', { class: 'tick', x: m.l + iw + 6, y: Y(ref.value) + 4,
+                 fill: 'var(--ink-2)' }, svg).textContent = ref.label;
+  }
+
+  const every = Math.max(1, Math.ceil(xs.length / Math.max(2, Math.floor(iw / 68))));
+  for (let i = xs.length - 1; i >= 0; i -= every) {
+    el('text', { class: 'tick', x: X(i), y: H - 8, 'text-anchor': 'middle' }, svg)
+      .textContent = xLabel(xs[i]);
+  }
+
+  /* End labels only survive if they can sit clear of one another — converging
+     lines get the legend and tooltip instead of a stack of detached labels. */
+  const ends = series.map(s => {
+    let last = -1;
+    s.values.forEach((v, i) => { if (v != null) last = i; });
+    return { s, last, y: last >= 0 ? Y(s.values[last]) : null };
+  }).filter(e => e.last >= 0 && !e.s.dim && e.s.label !== false);
+  const ys = ends.map(e => e.y).sort((a, b) => a - b);
+  const crowded = narrow || ys.some((y, i) => i && y - ys[i - 1] < 14);
+
+  for (const s of series) {
+    let d = '', pen = false;
+    s.values.forEach((v, i) => {
+      if (v == null) { pen = false; return; }
+      d += (pen ? 'L' : 'M') + X(i) + ' ' + Y(v); pen = true;
+    });
+    if (!d) continue;
+    el('path', { class: 'serie', d, stroke: s.color, 'stroke-opacity': s.dim ? .3 : 1 }, svg);
+    const e = ends.find(x => x.s === s);
+    let last = -1;
+    s.values.forEach((v, i) => { if (v != null) last = i; });
+    if (last >= 0 && !s.dim) {
+      el('circle', { class: 'endcap', cx: X(last), cy: Y(s.values[last]), r: 4,
+                     fill: s.color }, svg);
+      if (e && !crowded)
+        el('text', { class: 'dlabel', x: X(last) + 9, y: e.y + 4 }, svg).textContent = s.name;
+    }
+  }
+
+  const cross = el('line', { class: 'crosshair', y1: m.t, y2: m.t + ih, x1: -99, x2: -99 }, svg);
+  const hit = el('rect', { class: 'hit', x: m.l, y: m.t, width: iw, height: ih }, svg);
+  const pick = ev => {
+    const bb = svg.getBoundingClientRect();
+    const px = (ev.clientX - bb.left) * (Wd / bb.width);
+    let i = Math.round(((px - m.l) / iw) * (xs.length - 1));
+    i = Math.max(0, Math.min(xs.length - 1, i));
+    cross.setAttribute('x1', X(i)); cross.setAttribute('x2', X(i));
+    const rows = series
+      .filter(s => s.values[i] != null)
+      .sort((a, b) => b.values[i] - a.values[i])
+      .slice(0, 9)
+      .map(s => ({ color: s.color, value: valFmt(s.values[i]), name: s.name }));
+    showTip(ev.clientX, ev.clientY, xLabel(xs[i]), rows.length ? rows : [{ value: '—', name: 'no data' }]);
+  };
+  hit.addEventListener('pointermove', pick);
+  hit.addEventListener('pointerleave', () => { hideTip(); cross.setAttribute('x1', -99); cross.setAttribute('x2', -99); });
+  return svg;
+}
+
+/* ---------- 100% stacked column chart ---------- */
+function stackChart(svg, opts) {
+  const { xs, keys, matrix, xLabel = String, unit = 'adults' } = opts;
+  clear(svg);
+  const H = +svg.getAttribute('height'), Wd = width(svg), m = { t: 14, r: 10, b: 26, l: 40 };
+  svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+  const iw = Math.max(10, Wd - m.l - m.r), ih = H - m.t - m.b;
+  const bw = Math.min(24, (iw / xs.length) * 0.72);
+  for (const p of [0, .25, .5, .75, 1]) {
+    const y = m.t + ih - p * ih;
+    el('line', { class: 'gridline', x1: m.l, x2: m.l + iw, y1: y, y2: y }, svg);
+    el('text', { class: 'tick', x: m.l - 8, y: y + 4, 'text-anchor': 'end' }, svg)
+      .textContent = Math.round(p * 100) + '%';
+  }
+  xs.forEach((x, i) => {
+    const cx = m.l + (i + .5) * (iw / xs.length);
+    const total = keys.reduce((s, k, ki) => s + (matrix[i][ki] || 0), 0);
+    let acc = 0;
+    keys.forEach((k, ki) => {
+      const v = matrix[i][ki] || 0; if (!v || !total) return;
+      const h = (v / total) * ih;
+      const y = m.t + ih - (acc / total) * ih - h;
+      const seg = el('rect', {
+        class: 'bar', x: cx - bw / 2, y: y + 1, width: bw, height: Math.max(0, h - 2),
+        rx: 2, fill: k.color
+      }, svg);
+      seg.addEventListener('pointermove', ev => showTip(ev.clientX, ev.clientY, xLabel(x), [
+        { color: k.color, value: (v / total * 100).toFixed(1) + '%', name: k.name },
+        { value: fmt(v), name: unit }
+      ]));
+      seg.addEventListener('pointerleave', hideTip);
+      acc += v;
+    });
+  });
+  /* label from the right so the final season always gets a tick and never
+     collides with the one before it */
+  const step = Math.max(1, Math.ceil(xs.length / Math.max(2, Math.floor(iw / 68))));
+  for (let i = xs.length - 1; i >= 0; i -= step) {
+    el('text', { class: 'tick', x: m.l + (i + .5) * (iw / xs.length), y: H - 8,
+                 'text-anchor': 'middle' }, svg).textContent = xLabel(xs[i]);
+  }
+}
+
+/* ---------- horizontal ranked bars ---------- */
+function rankChart(svg, items, onPick) {
+  clear(svg);
+  const rowH = 26, m = { t: 8, r: 76, b: 8, l: 174 };
+  const H = m.t + m.b + items.length * rowH;
+  const Wd = width(svg);
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+  const iw = Math.max(10, Wd - m.l - m.r);
+  const max = Math.max(1, ...items.map(d => d.value));
+  items.forEach((d, i) => {
+    const y = m.t + i * rowH;
+    const w = (d.value / max) * iw;
+    el('text', { class: 'tick', x: m.l - 10, y: y + rowH / 2 + 4, 'text-anchor': 'end',
+                 fill: 'var(--ink-2)' }, svg).textContent = d.name;
+    const g = el('g', { class: 'bar', style: 'cursor:pointer' }, svg);
+    el('rect', { x: m.l, y: y + 4, width: Math.max(2, w), height: rowH - 10, rx: 4,
+                 fill: d.color }, g);
+    el('rect', { x: m.l - 174, y, width: Wd, height: rowH, fill: 'transparent' }, g);
+    el('text', { class: 'dlabel', x: m.l + Math.max(2, w) + 8, y: y + rowH / 2 + 4 }, svg)
+      .textContent = compact(d.value);
+    g.addEventListener('pointermove', ev => showTip(ev.clientX, ev.clientY, d.name,
+      [{ color: d.color, value: fmt(d.value), name: 'adults' },
+       ...(d.extra || [])]));
+    g.addEventListener('pointerleave', hideTip);
+    if (onPick) g.addEventListener('click', () => onPick(d));
+  });
+}
+
+/* ---------- table helper ---------- */
+function renderTable(host, cols, rows, opts = {}) {
+  clear(host);
+  const t = document.createElement('table');
+  const thead = document.createElement('thead'), tr = document.createElement('tr');
+  cols.forEach(c => {
+    const th = document.createElement('th');
+    th.textContent = c.label;
+    if (c.left) th.className = 'l';
+    tr.appendChild(th);
+  });
+  thead.appendChild(tr); t.appendChild(thead);
+  const tb = document.createElement('tbody');
+  for (const r of rows) {
+    const row = document.createElement('tr');
+    cols.forEach(c => {
+      const td = document.createElement('td');
+      if (c.left) td.className = 'l';
+      const v = c.get(r);
+      if (v instanceof Node) td.appendChild(v); else td.textContent = v;
+      row.appendChild(td);
+    });
+    tb.appendChild(row);
+  }
+  t.appendChild(tb); host.appendChild(t);
+  if (opts.caption) {
+    const p = document.createElement('p');
+    p.className = 'note'; p.textContent = opts.caption; host.appendChild(p);
+  }
+}
+
+/* ---------- legend helper ---------- */
+function renderLegend(host, items, box) {
+  clear(host);
+  for (const it of items) {
+    const d = document.createElement('span'); d.className = 'item';
+    const s = document.createElement('span');
+    s.className = 'swatch' + (box ? ' box' : ''); s.style.background = it.color;
+    const n = document.createElement('span'); n.textContent = it.name;
+    d.appendChild(s); d.appendChild(n); host.appendChild(d);
+  }
+}
+</script>
+
+<script>
+"use strict";
+
+/* ===================== filter UI ===================== */
+const $ = id => document.getElementById(id);
+
+(function initFilters() {
+  const from = $('f-from'), to = $('f-to');
+  YEARS.forEach(y => {
+    from.appendChild(new Option(season(y), y));
+    to.appendChild(new Option(season(y), y));
+  });
+  from.value = Y0; to.value = Y1;
+  A.regions.forEach((r, i) => { if (r !== 'Unknown') $('f-region').appendChild(new Option(r, i)); });
+
+  const host = $('f-species');
+  SP_ORDER.forEach(sp => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip';
+    b.setAttribute('aria-pressed', state.species.has(sp));
+    const k = document.createElement('span'); k.className = 'key';
+    k.style.background = colorOf(sp);
+    const n = document.createElement('span'); n.textContent = A.species[sp];
+    b.appendChild(k); b.appendChild(n); host.appendChild(b);
+    b.addEventListener('click', () => {
+      if (state.species.has(sp)) state.species.delete(sp); else state.species.add(sp);
+      b.setAttribute('aria-pressed', state.species.has(sp));
+      renderAll();
+    });
+  });
+
+  from.addEventListener('change', () => {
+    state.from = +from.value;
+    if (state.from > state.to) { state.to = state.from; to.value = state.to; }
+    renderAll();
+  });
+  to.addEventListener('change', () => {
+    state.to = +to.value;
+    if (state.to < state.from) { state.from = state.to; from.value = state.from; }
+    renderAll();
+  });
+  $('f-region').addEventListener('change', e => { state.region = e.target.value; renderAll(); });
+  $('f-bo').addEventListener('change', e => { state.bo = e.target.value; renderAll(); });
+  $('f-reset').addEventListener('click', () => {
+    state.from = Y0; state.to = Y1; state.region = ''; state.bo = '';
+    state.species = new Set(primaryIdx);
+    from.value = Y0; to.value = Y1; $('f-region').value = ''; $('f-bo').value = '';
+    host.querySelectorAll('.chip').forEach((c, i) =>
+      c.setAttribute('aria-pressed', state.species.has(SP_ORDER[i])));
+    renderAll();
+  });
+})();
+
+/* ===================== tabs ===================== */
+(function initTabs() {
+  const tabs = [...document.querySelectorAll('.tab')];
+  tabs.forEach(t => t.addEventListener('click', () => {
+    tabs.forEach(o => {
+      const on = o === t;
+      o.setAttribute('aria-selected', on);
+      $(o.getAttribute('aria-controls')).classList.toggle('hidden', !on);
+    });
+    renderAll();
+  }));
+  document.querySelectorAll('.tbl-toggle').forEach(b => {
+    b.addEventListener('click', () => {
+      const t = $(b.dataset.table);
+      const show = t.classList.contains('hidden');
+      t.classList.toggle('hidden', !show);
+      b.textContent = show ? 'Chart' : 'Table';
+    });
+  });
+})();
+const activePanel = () =>
+  document.querySelector('.tab[aria-selected="true"]').getAttribute('aria-controls');
+
+/* ===================== hero ===================== */
+function renderHero() {
+  const byYear = new Map();
+  for (const r of A.rows) {
+    if (!primaryIdx.includes(r[C.sp])) continue;
+    byYear.set(r[C.year], (byYear.get(r[C.year]) || 0) + r[C.adults]);
+  }
+  const vals = YEARS.map(y => byYear.get(y) || 0);
+  const last = vals[vals.length - 1], prev = vals[vals.length - 2];
+  const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+  $('hero-val').textContent = fmt(last);
+  const pct = ((last - mean) / mean) * 100;
+  $('hero-sub').textContent =
+    `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% against the 27-season average of ${compact(mean)} · ` +
+    `${last >= prev ? 'up' : 'down'} ${compact(Math.abs(last - prev))} on ${season(Y1 - 1)}`;
+
+  const svg = $('hero-spark');
+  clear(svg);
+  const H = 118, Wd = width(svg), m = { t: 12, r: 8, b: 20, l: 8 };
+  svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+  const iw = Wd - m.l - m.r, ih = H - m.t - m.b;
+  const max = Math.max(...vals);
+  const bw = Math.min(18, (iw / vals.length) * .66);
+  vals.forEach((v, i) => {
+    const cx = m.l + (i + .5) * (iw / vals.length);
+    const h = (v / max) * ih;
+    const isLast = i === vals.length - 1;
+    const bar = el('rect', {
+      class: 'bar', x: cx - bw / 2, y: m.t + ih - h, width: bw, height: Math.max(1, h),
+      rx: 3, fill: isLast ? cssv('--accent') : cssv('--axis')
+    }, svg);
+    bar.addEventListener('pointermove', ev => showTip(ev.clientX, ev.clientY, season(YEARS[i]),
+      [{ color: isLast ? cssv('--accent') : cssv('--axis'), value: fmt(v), name: 'adults, six salmonids' }]));
+    bar.addEventListener('pointerleave', hideTip);
+  });
+  el('line', { class: 'axis-line', x1: m.l, x2: m.l + iw, y1: m.t + ih, y2: m.t + ih }, svg);
+  [0, vals.length - 1].forEach(i => {
+    el('text', { class: 'tick', x: m.l + (i + .5) * (iw / vals.length), y: H - 5,
+      'text-anchor': i ? 'end' : 'start' }, svg).textContent = season(YEARS[i]);
+  });
+}
+
+/* ===================== overview ===================== */
+function yearsInScope() {
+  const out = []; for (let y = state.from; y <= state.to; y++) if (YEARS.includes(y)) out.push(y);
+  return out;
+}
+
+function renderTiles(rows, years) {
+  const host = $('tiles'); clear(host);
+  const adults = rows.reduce((s, r) => s + r[C.adults], 0);
+  const jacks = rows.reduce((s, r) => s + r[C.jacks], 0);
+  const eggs = rows.reduce((s, r) => s + r[C.eggtake], 0);
+  const released = rows.reduce((s, r) => s + r[C.adults_rel], 0);
+  const byYear = new Map();
+  for (const r of rows) byYear.set(r[C.year], (byYear.get(r[C.year]) || 0) + r[C.adults]);
+  let peakY = null, peakV = -1;
+  for (const [y, v] of byYear) if (v > peakV) { peakV = v; peakY = y; }
+  const nFac = new Set(rows.filter(r => r[C.adults] > 0).map(r => r[C.fac])).size;
+
+  const tiles = [
+    { label: 'Adults trapped', value: compact(adults),
+      sub: `${years.length} season${years.length > 1 ? 's' : ''} · ${fmt(adults)} fish` },
+    { label: 'Jacks', value: compact(jacks),
+      sub: adults ? `${(jacks / adults * 100).toFixed(1)}% of the adult count` : '—' },
+    { label: 'Peak season', value: peakY == null ? '—' : season(peakY),
+      sub: peakY == null ? '' : `${compact(peakV)} adults` },
+    { label: 'Egg take', value: compact(eggs), sub: `${fmt(eggs)} eggs` },
+    { label: 'Released upstream', value: compact(released),
+      sub: adults ? `${(released / adults * 100).toFixed(0)}% of adults passed above the rack` : '—' },
+    { label: 'Facilities', value: fmt(nFac), sub: 'racks and traps reporting fish' }
+  ];
+  for (const t of tiles) {
+    const d = document.createElement('div'); d.className = 'tile';
+    const a = document.createElement('div'); a.className = 'label'; a.textContent = t.label;
+    const b = document.createElement('div'); b.className = 'value'; b.textContent = t.value;
+    const c = document.createElement('div'); c.className = 'sub'; c.textContent = t.sub;
+    d.append(a, b, c); host.appendChild(d);
+  }
+}
+
+function renderTrend(rows, years) {
+  const sel = [...state.species].sort((a, b) => SP_ORDER.indexOf(a) - SP_ORDER.indexOf(b));
+  const grid = new Map();
+  for (const r of rows) {
+    const k = r[C.sp] + ':' + r[C.year];
+    grid.set(k, (grid.get(k) || 0) + r[C.adults]);
+  }
+  const series = sel.map(sp => ({
+    name: A.species[sp], color: colorOf(sp),
+    values: years.map(y => grid.has(sp + ':' + y) ? grid.get(sp + ':' + y) : null)
+  })).filter(s => s.values.some(v => v));
+  /* end-labels only when few enough series to separate cleanly */
+  if (series.length > 4) series.forEach(s => s.label = false);
+  lineChart($('c-trend'), { xs: years, series, xLabel: season });
+  renderLegend($('l-trend'), series.map(s => ({ name: s.name, color: s.color })));
+  renderTable($('t-trend'),
+    [{ label: 'Season', left: true, get: r => season(r.y) },
+     ...series.map(s => ({ label: s.name, get: r => s.values[r.i] == null ? '—' : fmt(s.values[r.i]) })),
+     { label: 'Total', get: r => fmt(series.reduce((a, s) => a + (s.values[r.i] || 0), 0)) }],
+    years.map((y, i) => ({ y, i })));
+}
+
+function renderRegion(rows, years) {
+  const keys = A.regions.map((n, i) => ({ i, name: n, color: '' }))
+    .filter(k => k.name !== 'Unknown');
+  keys.forEach((k, i) => k.color = cssv(SERIES_VARS[i]));
+  const matrix = years.map(y => keys.map(k =>
+    rows.reduce((s, r) => s + (r[C.year] === y && r[C.region] === k.i ? r[C.adults] : 0), 0)));
+  stackChart($('c-region'), { xs: years, keys, matrix, xLabel: season });
+  renderLegend($('l-region'), keys, true);
+  renderTable($('t-region'),
+    [{ label: 'Season', left: true, get: r => season(r.y) },
+     ...keys.map((k, ki) => ({ label: k.name, get: r => fmt(matrix[r.i][ki]) })),
+     { label: 'Total', get: r => fmt(matrix[r.i].reduce((a, b) => a + b, 0)) }],
+    years.map((y, i) => ({ y, i })));
+}
+
+function renderBo(rows, years) {
+  const keys = [1, 2, 3].map((b, i) => ({ i: b, name: BO[b], color: cssv(SERIES_VARS[i]) }));
+  const matrix = years.map(y => keys.map(k =>
+    rows.reduce((s, r) => s + (r[C.year] === y && r[C.bo] === k.i ? r[C.adults] : 0), 0)));
+  stackChart($('c-bo'), { xs: years, keys, matrix, xLabel: season });
+  renderLegend($('l-bo'), keys, true);
+  renderTable($('t-bo'),
+    [{ label: 'Season', left: true, get: r => season(r.y) },
+     ...keys.map((k, ki) => ({ label: k.name, get: r => fmt(matrix[r.i][ki]) })),
+     { label: 'Hatchery share', get: r => {
+         const t = matrix[r.i].reduce((a, b) => a + b, 0);
+         return t ? (matrix[r.i][0] / t * 100).toFixed(1) + '%' : '—'; } }],
+    years.map((y, i) => ({ y, i })));
+}
+</script>
+
+<script>
+"use strict";
+
+/* ===================== species panel ===================== */
+function renderSmalls(rows, years) {
+  const host = $('smalls'); clear(host);
+  const sel = SP_ORDER.filter(sp => state.species.size === 0 || state.species.has(sp));
+  const grid = new Map();
+  for (const r of rows) grid.set(r[C.sp] + ':' + r[C.year],
+    (grid.get(r[C.sp] + ':' + r[C.year]) || 0) + r[C.adults]);
+
+  const tblRows = [], pending = [];
+  for (const sp of sel) {
+    const vals = years.map(y => grid.get(sp + ':' + y) || 0);
+    if (!vals.some(v => v > 0)) continue;
+    const max = Math.max(...vals), peakI = vals.indexOf(max);
+    const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+    const last = vals[vals.length - 1];
+    tblRows.push({ sp, vals, max, peakI, mean, last });
+
+    const card = document.createElement('div');
+    card.style.cssText = 'border:1px solid var(--rule);border-radius:10px;padding:12px 12px 8px;min-width:0';
+    const h = document.createElement('div');
+    h.style.cssText = 'display:flex;align-items:baseline;justify-content:space-between;gap:10px';
+    const nm = document.createElement('span');
+    nm.style.cssText = 'font-size:13.5px;font-weight:600;display:inline-flex;align-items:center;gap:8px';
+    const sw = document.createElement('span');
+    sw.style.cssText = `width:11px;height:11px;border-radius:3px;background:${colorOf(sp)}`;
+    const t = document.createElement('span'); t.textContent = A.species[sp];
+    nm.append(sw, t);
+    const v = document.createElement('span');
+    v.style.cssText = 'font-family:var(--mono);font-size:12px;color:var(--ink-2)';
+    v.textContent = compact(last) + ' latest';
+    h.append(nm, v); card.appendChild(h);
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('class', 'plot'); svg.setAttribute('height', 92);
+    card.appendChild(svg); host.appendChild(card);
+    pending.push({ sp, vals, max, peakI, svg });
+  }
+
+  /* draw only after every card is in the grid, so each svg measures its final width */
+  for (const { sp, vals, max, peakI, svg } of pending) {
+    const Wd = width(svg), m = { t: 22, r: 8, b: 18, l: 8 }, H = 92;
+    svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+    const iw = Wd - m.l - m.r, ih = H - m.t - m.b;
+    const X = i => m.l + (vals.length === 1 ? iw / 2 : (i / (vals.length - 1)) * iw);
+    const Y = val => m.t + ih - (val / (max || 1)) * ih;
+    let d = '', area = '';
+    vals.forEach((val, i) => { d += (i ? 'L' : 'M') + X(i) + ' ' + Y(val); });
+    area = d + `L${X(vals.length - 1)} ${m.t + ih}L${X(0)} ${m.t + ih}Z`;
+    el('path', { d: area, fill: colorOf(sp), 'fill-opacity': .1 }, svg);
+    el('path', { class: 'serie', d, stroke: colorOf(sp) }, svg);
+    el('circle', { class: 'endcap', cx: X(peakI), cy: Y(max), r: 4, fill: colorOf(sp) }, svg);
+    el('line', { class: 'axis-line', x1: m.l, x2: m.l + iw, y1: m.t + ih, y2: m.t + ih }, svg);
+    /* the peak label lives in the reserved top margin, never over the line */
+    el('text', { class: 'tick', x: X(peakI), y: 12, 'text-anchor':
+      peakI > vals.length * .72 ? 'end' : peakI < vals.length * .28 ? 'start' : 'middle',
+      fill: 'var(--ink-2)' }, svg).textContent = `peak ${season(years[peakI])} · ${compact(max)}`;
+    [0, years.length - 1].forEach(i => {
+      if (years.length < 2 && i) return;
+      el('text', { class: 'tick', x: X(i), y: H - 4, 'text-anchor': i ? 'end' : 'start' }, svg)
+        .textContent = season(years[i]);
+    });
+    const hit = el('rect', { class: 'hit', x: m.l, y: m.t, width: iw, height: ih }, svg);
+    hit.addEventListener('pointermove', ev => {
+      const bb = svg.getBoundingClientRect();
+      const px = (ev.clientX - bb.left) * (Wd / bb.width);
+      let i = Math.round(((px - m.l) / iw) * (vals.length - 1));
+      i = Math.max(0, Math.min(vals.length - 1, i));
+      showTip(ev.clientX, ev.clientY, `${A.species[sp]} · ${season(years[i])}`,
+        [{ color: colorOf(sp), value: fmt(vals[i]), name: 'adults' }]);
+    });
+    hit.addEventListener('pointerleave', hideTip);
+  }
+  renderTable($('t-small'),
+    [{ label: 'Species', left: true, get: r => A.species[r.sp] },
+     { label: 'Latest', get: r => fmt(r.last) },
+     { label: 'Mean', get: r => fmt(r.mean) },
+     { label: 'Peak', get: r => fmt(r.max) },
+     { label: 'Peak season', get: r => season(years[r.peakI]) },
+     { label: 'Latest vs mean', get: r => r.mean ? ((r.last - r.mean) / r.mean * 100).toFixed(0) + '%' : '—' }],
+    tblRows);
+}
+
+function renderRace(rows, years) {
+  const sel = $('race-species');
+  if (!sel.options.length) {
+    SP_ORDER.forEach(sp => sel.appendChild(new Option(A.species[sp], sp)));
+    sel.value = state.raceSp;
+    sel.addEventListener('change', () => { state.raceSp = +sel.value; renderAll(); });
+  }
+  const sp = state.raceSp;
+  const sub = rows.filter(r => r[C.sp] === sp);
+  const totals = new Map();
+  for (const r of sub) totals.set(r[C.race], (totals.get(r[C.race]) || 0) + r[C.adults]);
+  const races = [...totals.entries()].filter(e => e[1] > 0)
+    .sort((a, b) => b[1] - a[1]).slice(0, 6).map(e => e[0]);
+  const grid = new Map();
+  for (const r of sub) grid.set(r[C.race] + ':' + r[C.year],
+    (grid.get(r[C.race] + ':' + r[C.year]) || 0) + r[C.adults]);
+  const series = races.map((ra, i) => ({
+    name: A.races[ra] === 'NA' ? 'Unclassified' : A.races[ra],
+    color: cssv(SERIES_VARS[i % 6]),
+    values: years.map(y => grid.get(ra + ':' + y) ?? null)
+  }));
+  if (series.length > 4) series.forEach(s => s.label = false);
+  lineChart($('c-race'), { xs: years, series, xLabel: season });
+  renderLegend($('l-race'), series.map(s => ({ name: s.name, color: s.color })));
+  $('c-race').setAttribute('aria-label', `${A.species[sp]} adults by run type and season`);
+  renderTable($('t-race'),
+    [{ label: 'Season', left: true, get: r => season(r.y) },
+     ...series.map(s => ({ label: s.name, get: r => s.values[r.i] == null ? '—' : fmt(s.values[r.i]) }))],
+    years.map((y, i) => ({ y, i })),
+    { caption: `${A.species[sp]} only.` });
+}
+
+/* ===================== facilities panel ===================== */
+function renderFacilities(rows, years) {
+  const tot = new Map(), spMix = new Map();
+  for (const r of rows) {
+    tot.set(r[C.fac], (tot.get(r[C.fac]) || 0) + r[C.adults]);
+    const k = r[C.fac] + ':' + r[C.sp];
+    spMix.set(k, (spMix.get(k) || 0) + r[C.adults]);
+  }
+  const ranked = [...tot.entries()].filter(e => e[1] > 0)
+    .sort((a, b) => b[1] - a[1]).slice(0, 20);
+  const grand = [...tot.values()].reduce((a, b) => a + b, 0);
+
+  const items = ranked.map(([f, v]) => {
+    let topSp = null, topV = -1;
+    for (const sp of SP_ORDER) {
+      const x = spMix.get(f + ':' + sp) || 0;
+      if (x > topV) { topV = x; topSp = sp; }
+    }
+    return {
+      name: A.facilities[f], value: v, fac: f, color: colorOf(topSp),
+      extra: [{ value: (v / grand * 100).toFixed(1) + '%', name: 'of selection' },
+              { value: A.species[topSp], name: 'largest run' }]
+    };
+  });
+  rankChart($('c-rank'), items, d => { state.facility = d.fac; $('fac-select').value = d.fac; renderFacDetail(rows, years); });
+  const shown = [...new Set(items.map(d => d.color))];
+  renderLegend($('l-rank'), SP_ORDER
+    .filter(sp => spColorVar.has(sp) && shown.includes(colorOf(sp)))
+    .map(sp => ({ name: A.species[sp], color: colorOf(sp) })), true);
+  renderTable($('t-rank'),
+    [{ label: '#', get: (r, i) => r.rank, left: true },
+     { label: 'Facility', left: true, get: r => r.name },
+     { label: 'Adults', get: r => fmt(r.value) },
+     { label: 'Share', get: r => (r.value / grand * 100).toFixed(1) + '%' },
+     { label: 'Largest run', left: true, get: r => r.extra[1].value }],
+    items.map((d, i) => ({ ...d, rank: i + 1 })));
+
+  const sel = $('fac-select');
+  const allFac = [...tot.entries()].filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
+  const prev = state.facility;
+  clear(sel);
+  allFac.forEach(([f]) => sel.appendChild(new Option(A.facilities[f], f)));
+  if (prev != null && allFac.some(e => e[0] === prev)) sel.value = prev;
+  else if (allFac.length) { state.facility = allFac[0][0]; sel.value = state.facility; }
+  if (!sel.dataset.bound) {
+    sel.dataset.bound = '1';
+    sel.addEventListener('change', () => { state.facility = +sel.value; renderFacDetail(rowsInScope(), yearsInScope()); });
+  }
+  renderFacDetail(rows, years);
+}
+
+function renderFacDetail(rows, years) {
+  const f = state.facility;
+  if (f == null) return;
+  $('fac-title').textContent = A.facilities[f];
+  const sub = rows.filter(r => r[C.fac] === f);
+  const tot = new Map();
+  for (const r of sub) tot.set(r[C.sp], (tot.get(r[C.sp]) || 0) + r[C.adults]);
+  const sps = [...tot.entries()].filter(e => e[1] > 0).sort((a, b) => b[1] - a[1])
+    .slice(0, 6).map(e => e[0]);
+  const grid = new Map();
+  for (const r of sub) grid.set(r[C.sp] + ':' + r[C.year],
+    (grid.get(r[C.sp] + ':' + r[C.year]) || 0) + r[C.adults]);
+  const series = sps.map(sp => ({
+    name: A.species[sp], color: colorOf(sp),
+    values: years.map(y => grid.get(sp + ':' + y) ?? null)
+  }));
+  if (series.length > 4) series.forEach(s => s.label = false);
+  lineChart($('c-fac'), { xs: years, series, xLabel: season });
+  renderLegend($('l-fac'), series.map(s => ({ name: s.name, color: s.color })));
+  const stocks = [...new Set(sub.map(r => A.stocks[r[C.stock]]).filter(Boolean))];
+  $('fac-note').textContent = stocks.length
+    ? `Stocks handled: ${stocks.slice(0, 6).join(', ')}${stocks.length > 6 ? ` +${stocks.length - 6} more` : ''}.`
+    : 'Adults by season, split by species.';
+  renderTable($('t-fac'),
+    [{ label: 'Season', left: true, get: r => season(r.y) },
+     ...series.map(s => ({ label: s.name, get: r => s.values[r.i] == null ? '—' : fmt(s.values[r.i]) })),
+     { label: 'Egg take', get: r => fmt(sub.reduce((a, x) => a + (x[C.year] === r.y ? x[C.eggtake] : 0), 0)) }],
+    years.map((y, i) => ({ y, i })));
+}
+</script>
+
+<script>
+"use strict";
+
+
+/* ===================== compare hatcheries ===================== */
+const CMP_MAX = 6;
+/* a slot is held by the hatchery that claimed it, so removing one from the
+   middle never repaints the rest */
+const cmpSlots = new Array(CMP_MAX).fill(null);
+function cmpColor(fac) {
+  const i = cmpSlots.indexOf(fac);
+  return i < 0 ? cssv('--ink-3') : cssv(SERIES_VARS[i]);
+}
+function cmpAdd(fac) {
+  if (state.compare.includes(fac)) return;
+  const slot = cmpSlots.indexOf(null);
+  if (slot < 0) return;
+  cmpSlots[slot] = fac;
+  state.compare.push(fac);
+}
+function cmpRemove(fac) {
+  const i = cmpSlots.indexOf(fac);
+  if (i >= 0) cmpSlots[i] = null;
+  state.compare = state.compare.filter(f => f !== fac);
+}
+
+const MEASURES = {
+  adults: { label: 'Adults trapped', col: 'adults', fmt: fmt },
+  jacks: { label: 'Jacks', col: 'jacks', fmt: fmt },
+  eggtake: { label: 'Egg take', col: 'eggtake', fmt: fmt },
+  adults_rel: { label: 'Released upstream', col: 'adults_rel', fmt: fmt }
+};
+
+function renderCompare(rows, years) {
+  const measure = MEASURES[state.cmpMeasure];
+  const mcol = C[measure.col];
+
+  /* volumes drive the picker order so the big racks are easy to find */
+  const vol = new Map();
+  for (const r of rows) vol.set(r[C.fac], (vol.get(r[C.fac]) || 0) + r[mcol]);
+  const all = [...vol.entries()].filter(e => e[1] > 0).sort((a, b) => b[1] - a[1]);
+
+  /* seed with the two busiest the first time the tab is opened */
+  if (!state.compare.length && all.length) {
+    all.slice(0, 2).forEach(([f]) => cmpAdd(f));
+  }
+
+  const q = state.cmpQ.trim().toLowerCase();
+  const list = $('cmp-list');
+  clear(list);
+  const shown = all.filter(([f]) => !q || A.facilities[f].toLowerCase().includes(q));
+  if (!shown.length) {
+    const p = document.createElement('p');
+    p.className = 'empty-note';
+    p.textContent = q ? `No hatchery matches “${state.cmpQ.trim()}”.` : 'No hatcheries in this selection.';
+    list.appendChild(p);
+  }
+  for (const [f, v] of shown.slice(0, 300)) {
+    const on = state.compare.includes(f);
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'opt'; b.setAttribute('role', 'option');
+    b.setAttribute('aria-selected', on);
+    if (!on && state.compare.length >= CMP_MAX) b.disabled = true;
+    const mk = document.createElement('span');
+    mk.className = 'mark';
+    if (on) { mk.style.background = cmpColor(f); mk.textContent = '✓'; }
+    const nm = document.createElement('span'); nm.textContent = A.facilities[f];
+    const vl = document.createElement('span'); vl.className = 'vol'; vl.textContent = compact(v);
+    b.append(mk, nm, vl);
+    b.addEventListener('click', () => {
+      if (on) cmpRemove(f); else cmpAdd(f);
+      renderCompare(rowsInScope(), yearsInScope());
+    });
+    list.appendChild(b);
+  }
+
+  /* selected chips double as the remove control */
+  const chips = $('cmp-selected');
+  clear(chips);
+  for (const f of state.compare) {
+    const c = document.createElement('button');
+    c.type = 'button'; c.className = 'chip sel';
+    c.setAttribute('aria-label', `Remove ${A.facilities[f]}`);
+    const k = document.createElement('span');
+    k.className = 'key'; k.style.background = cmpColor(f);
+    const n = document.createElement('span'); n.textContent = A.facilities[f];
+    const x = document.createElement('span'); x.className = 'x'; x.textContent = '×';
+    c.append(k, n, x);
+    c.addEventListener('click', () => {
+      cmpRemove(f);
+      renderCompare(rowsInScope(), yearsInScope());
+    });
+    chips.appendChild(c);
+  }
+
+  $('cmp-note').textContent = state.compare.length >= CMP_MAX
+    ? `Six is the limit — remove one to add another. Showing ${measure.label.toLowerCase()} by season.`
+    : `Pick up to six racks to chart side by side. Showing ${measure.label.toLowerCase()} by season.`;
+
+  const svg = $('c-cmp');
+  if (!state.compare.length) {
+    clear(svg);
+    svg.removeAttribute('viewBox');
+    clear($('l-cmp'));
+    clear($('t-cmp'));
+    const p = document.createElement('p');
+    p.className = 'empty-note';
+    p.textContent = 'Choose a hatchery above to start the comparison.';
+    $('t-cmp').appendChild(p);
+    $('t-cmp').classList.remove('hidden');
+    return;
+  }
+
+  const grid = new Map();
+  for (const r of rows) {
+    if (!state.compare.includes(r[C.fac])) continue;
+    const k = r[C.fac] + ':' + r[C.year];
+    grid.set(k, (grid.get(k) || 0) + r[mcol]);
+  }
+  const series = state.compare.map(f => ({
+    name: A.facilities[f], color: cmpColor(f), fac: f,
+    values: years.map(y => grid.has(f + ':' + y) ? grid.get(f + ':' + y) : null)
+  }));
+  if (series.length > 4) series.forEach(s => s.label = false);
+  lineChart(svg, { xs: years, series, xLabel: season, valFmt: measure.fmt });
+  renderLegend($('l-cmp'), series.map(s => ({ name: s.name, color: s.color })));
+
+  const totals = series.map(s => s.values.reduce((a, b) => a + (b || 0), 0));
+  renderTable($('t-cmp'),
+    [{ label: 'Season', left: true, get: r => season(r.y) },
+     ...series.map(s => ({ label: s.name, get: r => s.values[r.i] == null ? '—' : measure.fmt(s.values[r.i]) }))],
+    years.map((y, i) => ({ y, i })),
+    { caption: `${measure.label} · totals over the range: ` +
+        series.map((s, i) => `${s.name} ${fmt(totals[i])}`).join(' · ') });
+}
+
+$('cmp-q').addEventListener('input', e => {
+  state.cmpQ = e.target.value;
+  renderCompare(rowsInScope(), yearsInScope());
+});
+$('cmp-clear').addEventListener('click', () => {
+  state.compare.slice().forEach(cmpRemove);
+  renderCompare(rowsInScope(), yearsInScope());
+});
+$('cmp-measure').addEventListener('change', e => {
+  state.cmpMeasure = e.target.value;
+  renderCompare(rowsInScope(), yearsInScope());
+});
+
+/* ===================== run timing ===================== */
+const WEEK_LABEL = w => {
+  const d = new Date(Date.UTC(2001, 2, 1 + w * 7));
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+};
+
+function timingSeries() {
+  if (!W) return [];
+  /* a season still in progress has no meaningful "share of the season" yet */
+  return W.series.filter(s => s.sp === state.timingSp && s.done &&
+    s.season >= state.from && s.season <= state.to);
+}
+
+function renderTiming() {
+  if (!W) { $('panel-timing').classList.add('hidden'); return; }
+  const sel = $('timing-species');
+  if (!sel.options.length) {
+    W.species.forEach((n, i) => sel.appendChild(new Option(n, i)));
+    const pref = W.species.indexOf('Chinook');
+    state.timingSp = pref >= 0 ? pref : 0;
+    sel.value = state.timingSp;
+    sel.addEventListener('change', () => { state.timingSp = +sel.value; renderAll(); });
+  }
+  const rows = timingSeries().sort((a, b) => a.season - b.season);
+  const weeks = [];
+  for (let w = 0; w <= 52; w++) weeks.push(w);
+  const latest = rows.length ? rows[rows.length - 1].season : null;
+
+  const series = rows.map(s => {
+    const end = s.w[s.w.length - 1][1] || 1;
+    const map = new Map(s.w);
+    const out = []; let run = null;
+    for (const w of weeks) {
+      if (map.has(w)) run = map.get(w);
+      out.push(run == null ? null : (run / end) * 100);
+    }
+    const isLatest = s.season === latest;
+    return {
+      name: season(s.season), season: s.season,
+      color: isLatest ? cssv('--s1') : cssv('--ink-3'),
+      dim: !isLatest, label: false, values: out, total: end
+    };
+  });
+  lineChart($('c-timing'), {
+    xs: weeks, series, xLabel: WEEK_LABEL, pct: true, yMaxForce: 100,
+    yFmt: v => Math.round(v) + '%', valFmt: v => v.toFixed(1) + '%'
+  });
+  renderLegend($('l-timing'), [
+    { name: latest == null ? 'latest season' : season(latest) + ' (latest in range)', color: cssv('--s1') },
+    { name: 'earlier seasons in range', color: cssv('--ink-3') }
+  ]);
+  $('timing-note').textContent =
+    `Cumulative share of each season's adult ${W.species[state.timingSp]} count, by week of the ` +
+    `March-to-March season. Built from ${fmt(W.n_reports)} weekly in-season reports (2013 onward), ` +
+    `which are cumulative season-to-date and preliminary.`;
+
+  renderTable($('t-timing'),
+    [{ label: 'Season', left: true, get: r => r.name },
+     { label: 'Season total', get: r => fmt(r.total) },
+     { label: '25% by', get: r => crossLabel(r, 25) },
+     { label: 'Median by', get: r => crossLabel(r, 50) },
+     { label: '75% by', get: r => crossLabel(r, 75) },
+     { label: 'Weeks 25–75%', get: r => {
+         const a = crossWeek(r, 25), b = crossWeek(r, 75);
+         return a == null || b == null ? '—' : (b - a); } }],
+    series);
+}
+
+function crossWeek(s, pct) {
+  for (let i = 0; i < s.values.length; i++)
+    if (s.values[i] != null && s.values[i] >= pct) return i;
+  return null;
+}
+const crossLabel = (s, pct) => { const w = crossWeek(s, pct); return w == null ? '—' : WEEK_LABEL(w); };
+
+function renderMedian() {
+  if (!W) return;
+  const bySp = new Map();
+  for (const s of W.series) {
+    if (!s.done || s.season < state.from || s.season > state.to) continue;
+    const end = s.w[s.w.length - 1][1] || 1;
+    let med = null;
+    for (const [w, v] of s.w) if (med == null && v / end >= .5) med = w;
+    if (med == null) continue;
+    if (!bySp.has(s.sp)) bySp.set(s.sp, new Map());
+    bySp.get(s.sp).set(s.season, med);
+  }
+  const seasons = [...new Set(W.series.filter(s => s.done).map(s => s.season))]
+    .filter(y => y >= state.from && y <= state.to).sort((a, b) => a - b);
+  const wanted = [...bySp.keys()]
+    .filter(sp => PRIMARY.includes(W.species[sp]))
+    .sort((a, b) => PRIMARY.indexOf(W.species[a]) - PRIMARY.indexOf(W.species[b]));
+  const series = wanted.map(sp => {
+    const gsp = A.species.indexOf(W.species[sp]);
+    return {
+      name: W.species[sp], color: gsp >= 0 ? colorOf(gsp) : cssv('--ink-3'),
+      values: seasons.map(y => bySp.get(sp).get(y) ?? null)
+    };
+  });
+  if (series.length > 4) series.forEach(s => s.label = false);
+  lineChart($('c-median'), {
+    xs: seasons, series, xLabel: season,
+    yFmt: v => WEEK_LABEL(Math.round(v)),
+    valFmt: v => WEEK_LABEL(Math.round(v))
+  });
+  renderLegend($('l-median'), series.map(s => ({ name: s.name, color: s.color })));
+  renderTable($('t-median'),
+    [{ label: 'Season', left: true, get: r => season(r.y) },
+     ...series.map(s => ({ label: s.name, get: r => s.values[r.i] == null ? '—' : WEEK_LABEL(s.values[r.i]) }))],
+    seasons.map((y, i) => ({ y, i })),
+    { caption: 'Week by which half the season-to-date adult count had been reached.' });
+}
+
+/* ===================== egg take ===================== */
+function renderEggs(rows, years) {
+  /* goals below a thousand eggs are placeholders, not programmes */
+  const withGoal = rows.filter(r => r[C.egg_goal] >= 1000);
+  const grid = new Map();
+  for (const r of withGoal) {
+    const k = r[C.year];
+    const g = grid.get(k) || [0, 0];
+    g[0] += r[C.eggtake]; g[1] += r[C.egg_goal];
+    grid.set(k, g);
+  }
+  const series = [{
+    name: 'Attainment', color: cssv('--s1'), label: false,
+    values: years.map(y => grid.has(y) ? (grid.get(y)[0] / grid.get(y)[1]) * 100 : null)
+  }];
+  /* a ratio-to-goal series is read against 100%, not against zero, so the band is
+     framed on the data with the goal line as the fixed reference */
+  const vals = series[0].values.filter(v => v != null);
+  const lo = Math.max(0, Math.floor((Math.min(100, ...vals) - 8) / 10) * 10);
+  const hi = Math.ceil((Math.max(100, ...vals) + 6) / 10) * 10;
+  const svg = $('c-egg');
+  lineChart(svg, {
+    xs: years, series, xLabel: season, yMin: lo, yMaxForce: hi,
+    yTicks: (() => { const t = []; for (let v = lo; v <= hi; v += 10) t.push(v); return t; })(),
+    ref: { value: 100, label: 'goal' },
+    yFmt: v => Math.round(v) + '%', valFmt: v => v.toFixed(1) + '%'
+  });
+  renderLegend($('l-egg'), [{ name: 'Egg take as % of Future Brood Document goal', color: cssv('--s1') }]);
+  renderTable($('t-egg'),
+    [{ label: 'Season', left: true, get: r => season(r.y) },
+     { label: 'Egg take', get: r => grid.has(r.y) ? fmt(grid.get(r.y)[0]) : '—' },
+     { label: 'Goal', get: r => grid.has(r.y) ? fmt(grid.get(r.y)[1]) : '—' },
+     { label: 'Attainment', get: r => grid.has(r.y) ? (grid.get(r.y)[0] / grid.get(r.y)[1] * 100).toFixed(1) + '%' : '—' }],
+    years.map(y => ({ y })),
+    { caption: 'Only rows that carry a numeric goal are included; NA goals are excluded, not treated as zero.' });
+
+  /* programme-level attainment */
+  const prog = new Map();
+  for (const r of withGoal) {
+    const k = r[C.fac] + ':' + r[C.sp];
+    const g = prog.get(k) || { fac: r[C.fac], sp: r[C.sp], take: 0, goal: 0, n: 0 };
+    g.take += r[C.eggtake]; g.goal += r[C.egg_goal]; g.n++;
+    prog.set(k, g);
+  }
+  const list = [...prog.values()].filter(p => p.goal > 0)
+    .sort((a, b) => (a.take / a.goal) - (b.take / b.goal)).slice(0, 30);
+  renderTable($('t-eggprog'),
+    [{ label: 'Facility', left: true, get: p => A.facilities[p.fac] },
+     { label: 'Species', left: true, get: p => A.species[p.sp] },
+     { label: 'Egg take', get: p => compact(p.take) },
+     { label: 'Goal', get: p => compact(p.goal) },
+     { label: 'Attainment', get: p => (p.take / p.goal * 100).toFixed(0) + '%' },
+     { label: '', get: p => {
+         const pc = Math.min(1, p.take / p.goal);
+         const d = document.createElement('div'); d.className = 'meter';
+         const i = document.createElement('i');
+         i.style.width = (pc * 100) + '%';
+         i.style.background = pc >= .9 ? cssv('--good') : pc >= .6 ? cssv('--warn') : cssv('--crit');
+         d.appendChild(i); return d; } }],
+    list,
+    { caption: `Thirty programmes furthest below goal across ${years.length} season(s). ` +
+               `Bar colour: green ≥90% of goal, amber ≥60%, red below.` });
+}
+
+/* ===================== data table ===================== */
+let dataRows = [];
+function renderData(rows) {
+  const q = state.dataQ.trim().toLowerCase();
+  dataRows = rows.filter(r => !q ||
+    A.facilities[r[C.fac]].toLowerCase().includes(q) ||
+    (A.stocks[r[C.stock]] || '').toLowerCase().includes(q));
+  const key = state.sort.key, dir = state.sort.dir;
+  const getter = {
+    season: r => r[C.year], facility: r => A.facilities[r[C.fac]],
+    stock: r => A.stocks[r[C.stock]] || '', species: r => A.species[r[C.sp]],
+    race: r => A.races[r[C.race]], bo: r => r[C.bo],
+    adults: r => r[C.adults], jacks: r => r[C.jacks],
+    eggtake: r => r[C.eggtake], released: r => r[C.adults_rel]
+  }[key];
+  const sorted = [...dataRows].sort((a, b) => {
+    const x = getter(a), y = getter(b);
+    return (typeof x === 'string' ? x.localeCompare(y) : x - y) * dir;
+  });
+  const shown = sorted.slice(0, 1200);
+  $('data-note').textContent =
+    `${fmt(dataRows.length)} rows in the current selection` +
+    (dataRows.length > shown.length ? ` — showing the first ${fmt(shown.length)}. Download for all.` : '.');
+
+  const cols = [
+    ['season', 'Season', true, r => season(r[C.year])],
+    ['facility', 'Facility', true, r => A.facilities[r[C.fac]]],
+    ['stock', 'Stock', true, r => A.stocks[r[C.stock]] || '—'],
+    ['species', 'Species', true, r => A.species[r[C.sp]]],
+    ['race', 'Run', true, r => A.races[r[C.race]]],
+    ['bo', 'Origin', true, r => BO[r[C.bo]]],
+    ['adults', 'Adults', false, r => fmt(r[C.adults])],
+    ['jacks', 'Jacks', false, r => fmt(r[C.jacks])],
+    ['eggtake', 'Egg take', false, r => fmt(r[C.eggtake])],
+    ['released', 'Released', false, r => fmt(r[C.adults_rel])]
+  ];
+  const host = $('t-data'); clear(host);
+  const t = document.createElement('table');
+  const thead = document.createElement('thead'), tr = document.createElement('tr');
+  cols.forEach(([k, label, left]) => {
+    const th = document.createElement('th');
+    th.className = 'sortable' + (left ? ' l' : '');
+    th.textContent = label + (state.sort.key === k ? (dir < 0 ? ' ↓' : ' ↑') : '');
+    th.addEventListener('click', () => {
+      if (state.sort.key === k) state.sort.dir *= -1;
+      else state.sort = { key: k, dir: k === 'facility' || k === 'stock' || k === 'species' ? 1 : -1 };
+      renderData(rowsInScope());
+    });
+    tr.appendChild(th);
+  });
+  thead.appendChild(tr); t.appendChild(thead);
+  const tb = document.createElement('tbody');
+  for (const r of shown) {
+    const row = document.createElement('tr');
+    cols.forEach(([, , left, get]) => {
+      const td = document.createElement('td');
+      if (left) td.className = 'l';
+      td.textContent = get(r);
+      row.appendChild(td);
+    });
+    tb.appendChild(row);
+  }
+  t.appendChild(tb); host.appendChild(t);
+}
+
+$('data-q').addEventListener('input', e => { state.dataQ = e.target.value; renderData(rowsInScope()); });
+$('data-csv').addEventListener('click', () => {
+  const head = ['season', 'facility', 'stock', 'species', 'run', 'origin', 'adults', 'jacks',
+                'adults_received', 'jacks_received', 'eggtake', 'eggtake_goal',
+                'adults_released', 'jacks_released', 'adults_net', 'jacks_net', 'region'];
+  const esc = v => /[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v;
+  const lines = [head.join(',')];
+  for (const r of dataRows) {
+    lines.push([
+      season(r[C.year]), A.facilities[r[C.fac]], A.stocks[r[C.stock]] || '',
+      A.species[r[C.sp]], A.races[r[C.race]], BO[r[C.bo]],
+      r[C.adults], r[C.jacks], r[C.adults_rcv], r[C.jacks_rcv],
+      r[C.eggtake], r[C.egg_goal] > 0 ? r[C.egg_goal] : 'NA',
+      r[C.adults_rel], r[C.jacks_rel], r[C.adults_net], r[C.jacks_net],
+      A.regions[r[C.region]]
+    ].map(esc).join(','));
+  }
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `wdfw-escapement-${state.from}-${state.to}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+/* ===================== orchestration ===================== */
+/* each plot names itself from the card it sits in, so screen readers get the title
+   rather than an anonymous graphic; the table twin carries the values */
+function labelPlots() {
+  document.querySelectorAll('.card').forEach(card => {
+    const h = card.querySelector('h2');
+    if (!h) return;
+    card.querySelectorAll('svg.plot').forEach(svg => {
+      svg.setAttribute('role', 'img');
+      svg.setAttribute('aria-label', h.textContent + ' — chart. Use the Table button for the values.');
+    });
+  });
+}
+
+function renderAll() {
+  const rows = rowsInScope(), years = yearsInScope();
+  const panel = activePanel();
+  renderHero();
+  if (panel === 'panel-overview') {
+    renderTiles(rows, years); renderTrend(rows, years);
+    renderRegion(rows, years); renderBo(rows, years);
+  } else if (panel === 'panel-species') {
+    renderSmalls(rows, years); renderRace(rows, years);
+  } else if (panel === 'panel-facility') {
+    renderFacilities(rows, years);
+    renderCompare(rows, years);
+  } else if (panel === 'panel-timing') {
+    renderTiming(); renderMedian();
+  } else if (panel === 'panel-eggs') {
+    renderEggs(rows, years);
+  } else if (panel === 'panel-map') {
+    renderMap(rows, years); renderWria(rows);
+  } else if (panel === 'panel-data') {
+    renderData(rows); renderExport();
+  }
+  labelPlots();
+}
+
+/* Collapsing the bar changes its own height, so anything that observes the bar's
+   position feeds back and flickers. Drive it off scroll position, with a gap
+   between the on and off thresholds so it can't oscillate at the boundary. */
+(function stickyFilters() {
+  const bar = document.querySelector('.filters');
+  const onAt = 200, offAt = 140;
+  let stuck = false, queued = false;
+  const check = () => {
+    queued = false;
+    const y = scrollY;
+    if (!stuck && y > onAt) { stuck = true; bar.classList.add('stuck'); }
+    else if (stuck && y < offAt) { stuck = false; bar.classList.remove('stuck'); }
+  };
+  addEventListener('scroll', () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(check);
+  }, { passive: true });
+  check();
+})();
+
+</script>
+<script>
+"use strict";
+/* =====================================================================
+   Office/geo export. XLSX and DOCX are both ZIP containers of XML, so one
+   small store-only ZIP writer serves both — no libraries, nothing fetched.
+   ===================================================================== */
+
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(buf) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) c = CRC_TABLE[(c ^ buf[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+const utf8 = s => new TextEncoder().encode(s);
+
+/** files: [{name, data:Uint8Array}] -> Blob (ZIP, stored/uncompressed) */
+function zipSync(files) {
+  const enc = files.map(f => ({ name: utf8(f.name), data: f.data, crc: crc32(f.data) }));
+  const now = new Date();
+  const dosTime = ((now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1)) & 0xFFFF;
+  const dosDate = (((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate()) & 0xFFFF;
+
+  const chunks = [], central = [];
+  let offset = 0;
+  for (const f of enc) {
+    const h = new DataView(new ArrayBuffer(30));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true);
+    h.setUint16(8, 0, true); h.setUint16(10, dosTime, true); h.setUint16(12, dosDate, true);
+    h.setUint32(14, f.crc, true); h.setUint32(18, f.data.length, true);
+    h.setUint32(22, f.data.length, true);
+    h.setUint16(26, f.name.length, true); h.setUint16(28, 0, true);
+    chunks.push(new Uint8Array(h.buffer), f.name, f.data);
+
+    const c = new DataView(new ArrayBuffer(46));
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true);
+    c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true);
+    c.setUint16(12, dosTime, true); c.setUint16(14, dosDate, true);
+    c.setUint32(16, f.crc, true); c.setUint32(20, f.data.length, true);
+    c.setUint32(24, f.data.length, true);
+    c.setUint16(28, f.name.length, true);
+    c.setUint32(42, offset, true);
+    central.push(new Uint8Array(c.buffer), f.name);
+    offset += 30 + f.name.length + f.data.length;
+  }
+  const centralSize = central.reduce((s, a) => s + a.length, 0);
+  const e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true);
+  e.setUint16(8, enc.length, true); e.setUint16(10, enc.length, true);
+  e.setUint32(12, centralSize, true); e.setUint32(16, offset, true);
+  return new Blob([...chunks, ...central, new Uint8Array(e.buffer)],
+                  { type: 'application/zip' });
+}
+
+const xmlEsc = s => String(s == null ? '' : s)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&apos;')
+  .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+
+function colRef(n) {           // 0 -> A, 26 -> AA
+  let s = '';
+  for (n += 1; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s;
+  return s;
+}
+
+/** sheets: [{name, columns:[{label,width}], rows:[[v,…]]}] — numbers stay numeric */
+function buildXLSX(sheets, title) {
+  const files = [];
+  const sheetXml = sheets.map((sh, si) => {
+    const cols = sh.columns.map((c, i) =>
+      `<col min="${i + 1}" max="${i + 1}" width="${c.width || 14}" customWidth="1"/>`).join('');
+    const head = '<row r="1">' + sh.columns.map((c, i) =>
+      `<c r="${colRef(i)}1" t="inlineStr" s="1"><is><t xml:space="preserve">${xmlEsc(c.label)}</t></is></c>`
+    ).join('') + '</row>';
+    const body = sh.rows.map((r, ri) => '<row r="' + (ri + 2) + '">' + r.map((v, i) => {
+      const ref = `${colRef(i)}${ri + 2}`;
+      if (typeof v === 'number' && Number.isFinite(v)) return `<c r="${ref}"><v>${v}</v></c>`;
+      if (v == null || v === '') return '';
+      return `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
+    }).join('') + '</row>').join('');
+    const dim = `A1:${colRef(sh.columns.length - 1)}${sh.rows.length + 1}`;
+    return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><dimension ref="${dim}"/><sheetViews><sheetView ${si ? '' : 'tabSelected="1" '}workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${cols}</cols><sheetData>${head}${body}</sheetData><autoFilter ref="${dim}"/></worksheet>`;
+  });
+
+  files.push({ name: '[Content_Types].xml', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${
+sheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')
+}<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`) });
+
+  files.push({ name: '_rels/.rels', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`) });
+
+  files.push({ name: 'docProps/core.xml', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xmlEsc(title)}</dc:title><dc:creator>WDFW hatchery escapement dashboard</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created></cp:coreProperties>`) });
+
+  files.push({ name: 'xl/workbook.xml', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${
+sheets.map((s, i) => `<sheet name="${xmlEsc(s.name).slice(0, 31)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')
+}</sheets></workbook>`) });
+
+  files.push({ name: 'xl/_rels/workbook.xml.rels', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${
+sheets.map((_, i) => `<Relationship Id="rId${i + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')
+}<Relationship Id="rId${sheets.length + 1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`) });
+
+  files.push({ name: 'xl/styles.xml', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFEDF2F1"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs></styleSheet>`) });
+
+  sheets.forEach((_, i) => files.push({
+    name: `xl/worksheets/sheet${i + 1}.xml`, data: utf8(sheetXml[i])
+  }));
+  return zipSync(files);
+}
+
+/** blocks: [{h:'Heading'} | {p:'text'} | {table:{columns,rows}}] */
+function buildDOCX(title, blocks) {
+  const P = (text, style) =>
+    `<w:p>${style ? `<w:pPr><w:pStyle w:val="${style}"/></w:pPr>` : ''}` +
+    `<w:r><w:t xml:space="preserve">${xmlEsc(text)}</w:t></w:r></w:p>`;
+  const cell = (text, bold, w) =>
+    `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${bold ? '<w:shd w:val="clear" w:fill="EDF2F1"/>' : ''}</w:tcPr>` +
+    `<w:p><w:pPr><w:spacing w:before="20" w:after="20"/>${
+      typeof text === 'number' ? '<w:jc w:val="right"/>' : ''}</w:pPr>` +
+    `<w:r>${bold ? '<w:rPr><w:b/></w:rPr>' : ''}<w:t xml:space="preserve">${
+      xmlEsc(typeof text === 'number' ? text.toLocaleString('en-US') : text)}</w:t></w:r></w:p></w:tc>`;
+
+  const body = blocks.map(b => {
+    if (b.h) return P(b.h, 'Heading1');
+    if (b.h2) return P(b.h2, 'Heading2');
+    if (b.p) return P(b.p);
+    if (b.table) {
+      const n = b.table.columns.length;
+      const w = Math.floor(9360 / n);
+      const head = '<w:tr><w:trPr><w:tblHeader/></w:trPr>' +
+        b.table.columns.map(c => cell(c.label, true, w)).join('') + '</w:tr>';
+      const rows = b.table.rows.map(r =>
+        '<w:tr>' + r.map(v => cell(v == null ? '' : v, false, w)).join('') + '</w:tr>').join('');
+      /* w:tblGrid is required by the OOXML schema — Word tolerates its absence,
+         strict readers do not */
+      const grid = '<w:tblGrid>' + b.table.columns
+        .map(() => `<w:gridCol w:w="${w}"/>`).join('') + '</w:tblGrid>';
+      return `<w:tbl><w:tblPr><w:tblW w:w="9360" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${
+        ['top', 'left', 'bottom', 'right', 'insideH', 'insideV'].map(s =>
+          `<w:${s} w:val="single" w:sz="4" w:space="0" w:color="C9D3D1"/>`).join('')
+      }</w:tblBorders></w:tblPr>${grid}${head}${rows}</w:tbl>${P('')}`;
+    }
+    return '';
+  }).join('');
+
+  const doc = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>${body}<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080"/></w:sectPr></w:body></w:document>`;
+
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="20"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:pPr><w:spacing w:before="240" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="32"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:pPr><w:spacing w:before="200" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="24"/></w:rPr></w:style></w:styles>`;
+
+  return zipSync([
+    { name: '[Content_Types].xml', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>`) },
+    { name: '_rels/.rels', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>`) },
+    { name: 'docProps/core.xml', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><dc:title>${xmlEsc(title)}</dc:title><dc:creator>WDFW hatchery escapement dashboard</dc:creator><dcterms:created xsi:type="dcterms:W3CDTF">${new Date().toISOString()}</dcterms:created></cp:coreProperties>`) },
+    { name: 'word/_rels/document.xml.rels', data: utf8(
+`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`) },
+    { name: 'word/styles.xml', data: utf8(styles) },
+    { name: 'word/document.xml', data: utf8(doc) },
+  ]);
+}
+
+function saveBlob(blob, filename) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+</script>
+
+<script>
+"use strict";
+/* ===================== map ===================== */
+const GEO = RAW.geo || null;
+const GC = GEO ? Object.fromEntries(GEO.cols.map((c, i) => [c, i])) : {};
+const WA = RAW.outline || [];
+const geoOf = fac => (GEO && GEO.rows[fac]) || null;
+
+/* Equirectangular with a cos(lat) correction — at Washington's latitude that is
+   close enough to conformal for a locator map, and it needs no projection code. */
+function makeProjection(w, h, pad) {
+  let x0 = 180, x1 = -180, y0 = 90, y1 = -90;
+  for (const ring of WA) for (const [x, y] of ring) {
+    if (x < x0) x0 = x; if (x > x1) x1 = x;
+    if (y < y0) y0 = y; if (y > y1) y1 = y;
+  }
+  const k = Math.cos((y0 + y1) / 2 * Math.PI / 180);
+  const sw = (x1 - x0) * k, sh = (y1 - y0);
+  const s = Math.min((w - pad * 2) / sw, (h - pad * 2) / sh);
+  const ox = (w - sw * s) / 2, oy = (h - sh * s) / 2;
+  return {
+    x: lon => ox + (lon - x0) * k * s,
+    y: lat => oy + (y1 - lat) * s,
+    scale: s, k,
+    /* one degree of longitude here, in px, for the scale bar */
+    kmToPx: km => (km / 111.32) * s
+  };
+}
+
+function renderMap(rows, years) {
+  const svg = $('c-map');
+  if (!GEO || !WA.length) {
+    clear(svg);
+    $('map-note').textContent = 'No facility coordinates in this build.';
+    return;
+  }
+  const basis = $('map-basis').value;
+  const mcol = basis === 'eggtake' ? C.eggtake : C.adults;
+
+  const tot = new Map(), mix = new Map();
+  for (const r of rows) {
+    tot.set(r[C.fac], (tot.get(r[C.fac]) || 0) + r[mcol]);
+    const k = r[C.fac] + ':' + r[C.sp];
+    mix.set(k, (mix.get(k) || 0) + r[C.adults]);
+  }
+
+  clear(svg);
+  const Wd = width(svg), H = Math.max(320, Math.min(560, Wd * 0.62));
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+  const P = makeProjection(Wd, H, 14);
+
+  for (const ring of WA) {
+    let d = 'M';
+    ring.forEach(([lon, lat], i) => {
+      d += (i ? 'L' : '') + P.x(lon).toFixed(1) + ' ' + P.y(lat).toFixed(1) + ' ';
+    });
+    el('path', { class: 'land', d: d + 'Z' }, svg);
+  }
+
+  const sites = [];
+  for (const [fac, v] of tot) {
+    const g = geoOf(fac);
+    if (!g || v <= 0) continue;
+    let topSp = null, topV = -1;
+    for (const sp of SP_ORDER) {
+      const x = mix.get(fac + ':' + sp) || 0;
+      if (x > topV) { topV = x; topSp = sp; }
+    }
+    sites.push({ fac, v, g, topSp, name: A.facilities[fac] });
+  }
+  sites.sort((a, b) => b.v - a.v);
+
+  const maxV = Math.max(1, ...sites.map(s => s.v));
+  const rOf = v => basis === 'uniform' ? 4.5
+    : Math.max(2.6, Math.sqrt(v / maxV) * 19);
+
+  /* biggest first so small racks stay clickable on top */
+  for (const s of sites) {
+    const cx = P.x(s.g[GC.lon]), cy = P.y(s.g[GC.lat]), r = rOf(s.v);
+    el('circle', { class: 'site', cx, cy, r, fill: colorOf(s.topSp),
+                   'fill-opacity': .78 }, svg);
+  }
+  for (const s of sites) {
+    const cx = P.x(s.g[GC.lon]), cy = P.y(s.g[GC.lat]), r = rOf(s.v);
+    const hit = el('circle', { class: 'site-hit', cx, cy, r: Math.max(r, 12) }, svg);
+    hit.addEventListener('pointermove', ev => showTip(ev.clientX, ev.clientY, s.name, [
+      { color: colorOf(s.topSp), value: fmt(s.v),
+        name: basis === 'eggtake' ? 'eggs' : 'adults' },
+      { value: A.species[s.topSp], name: 'largest run' },
+      { value: (s.g[GC.county] || '—') + ' Co.', name: 'county' },
+      { value: 'WRIA ' + (s.g[GC.wria] ?? '—'), name: s.g[GC.waterbody] || '' }
+    ]));
+    hit.addEventListener('pointerleave', hideTip);
+    hit.addEventListener('click', () => {
+      if (!state.compare.includes(s.fac)) cmpAdd(s.fac);
+      document.getElementById('tab-facility').click();
+      setTimeout(() => $('c-cmp').scrollIntoView({ block: 'center' }), 60);
+    });
+  }
+
+  /* scale bar — a map without one invites the wrong distance read */
+  const kmLen = 80, px = P.kmToPx(kmLen);
+  const bx = 16, by = H - 16;
+  el('line', { class: 'scalebar', x1: bx, x2: bx + px, y1: by, y2: by }, svg);
+  el('line', { class: 'scalebar', x1: bx, x2: bx, y1: by - 4, y2: by + 4 }, svg);
+  el('line', { class: 'scalebar', x1: bx + px, x2: bx + px, y1: by - 4, y2: by + 4 }, svg);
+  el('text', { class: 'tick', x: bx + px / 2, y: by - 7, 'text-anchor': 'middle' }, svg)
+    .textContent = kmLen + ' km';
+
+  const seen = [...new Set(sites.map(s => s.topSp))];
+  renderLegend($('l-map'), SP_ORDER.filter(sp => spColorVar.has(sp) && seen.includes(sp))
+    .map(sp => ({ name: A.species[sp], color: colorOf(sp) })), true);
+  $('map-note').textContent =
+    `${sites.length} racks with a location, sized by ${basis === 'eggtake' ? 'egg take' :
+      basis === 'uniform' ? 'nothing (uniform)' : 'adults trapped'} over ` +
+    `${years.length} season${years.length > 1 ? 's' : ''}. Click a point to compare that hatchery.`;
+
+  renderTable($('t-map'),
+    [{ label: 'Facility', left: true, get: s => s.name },
+     { label: 'County', left: true, get: s => s.g[GC.county] || '—' },
+     { label: 'WRIA', get: s => s.g[GC.wria] ?? '—' },
+     { label: 'Waterbody', left: true, get: s => s.g[GC.waterbody] || '—' },
+     { label: 'Latitude', get: s => s.g[GC.lat].toFixed(5) },
+     { label: 'Longitude', get: s => s.g[GC.lon].toFixed(5) },
+     { label: basis === 'eggtake' ? 'Egg take' : 'Adults', get: s => fmt(s.v) },
+     { label: 'Largest run', left: true, get: s => A.species[s.topSp] }],
+    sites, { caption: 'Coordinates from the WDFW HatcheryLikeFacilities GIS layer.' });
+}
+
+$('map-basis').addEventListener('change', () => renderAll());
+
+function renderWria(rows) {
+  if (!GEO) return;
+  const tot = new Map();
+  for (const r of rows) {
+    const g = geoOf(r[C.fac]);
+    if (!g || g[GC.wria] == null) continue;
+    const k = g[GC.wria];
+    const e = tot.get(k) || { wria: k, adults: 0, eggs: 0, facs: new Set(), sys: new Set() };
+    e.adults += r[C.adults]; e.eggs += r[C.eggtake];
+    e.facs.add(r[C.fac]);
+    if (g[GC.waterbody]) e.sys.add(g[GC.waterbody]);
+    tot.set(k, e);
+  }
+  const list = [...tot.values()].filter(e => e.adults > 0)
+    .sort((a, b) => b.adults - a.adults);
+  rankChart($('c-wria'), list.slice(0, 18).map(e => ({
+    name: 'WRIA ' + e.wria, value: e.adults, color: cssv('--s1'),
+    extra: [{ value: fmt(e.facs.size), name: 'facilities' },
+            { value: compact(e.eggs), name: 'eggs' }]
+  })));
+  renderTable($('t-wria'),
+    [{ label: 'WRIA', get: e => e.wria },
+     { label: 'Waterbodies', left: true,
+       get: e => [...e.sys].slice(0, 3).join(', ') + ([...e.sys].length > 3 ? '…' : '') },
+     { label: 'Facilities', get: e => fmt(e.facs.size) },
+     { label: 'Adults', get: e => fmt(e.adults) },
+     { label: 'Egg take', get: e => fmt(e.eggs) }],
+    list);
+}
+
+/* ===================== export ===================== */
+const BO_NAME = ['Unknown', 'Hatchery', 'Wild', 'Mixed'];
+const SCOPES = [
+  ['rows', 'Every row', 'facility × stock × species × season'],
+  ['season', 'By season & species', 'one row per season and species'],
+  ['facility', 'By facility', 'one row per facility and season'],
+  ['sites', 'Facility locations', 'coordinates and watershed'],
+];
+state.expScope = 'rows';
+
+function slice() { return { rows: rowsInScope(), years: yearsInScope() }; }
+
+function tableFor(scope) {
+  const { rows, years } = slice();
+  if (scope === 'rows') {
+    return {
+      name: 'Escapement rows',
+      columns: [['Season', 12], ['Season start', 11], ['Facility', 24], ['Stock', 26],
+                ['Species', 12], ['Run type', 12], ['Origin', 10], ['Region', 14],
+                ['County', 14], ['WRIA', 7], ['Latitude', 11], ['Longitude', 11],
+                ['Adults trapped', 14], ['Jacks trapped', 13],
+                ['Adults received', 15], ['Jacks received', 14],
+                ['Egg take', 13], ['Egg take goal', 13],
+                ['Adults released', 15], ['Jacks released', 14],
+                ['Adults net', 12], ['Jacks net', 11]].map(([label, width]) => ({ label, width })),
+      rows: rows.map(r => {
+        const g = geoOf(r[C.fac]);
+        return [
+          season(r[C.year]), r[C.year],
+          A.facilities[r[C.fac]], A.stocks[r[C.stock]] || '',
+          A.species[r[C.sp]], A.races[r[C.race]], BO_NAME[r[C.bo]],
+          A.regions[r[C.region]],
+          g ? (g[GC.county] || '') : '', g ? g[GC.wria] : '',
+          g ? g[GC.lat] : '', g ? g[GC.lon] : '',
+          r[C.adults], r[C.jacks], r[C.adults_rcv], r[C.jacks_rcv],
+          r[C.eggtake], r[C.egg_goal] > 0 ? r[C.egg_goal] : '',
+          r[C.adults_rel], r[C.jacks_rel], r[C.adults_net], r[C.jacks_net]
+        ];
+      })
+    };
+  }
+  if (scope === 'season') {
+    const g = new Map();
+    for (const r of rows) {
+      const k = r[C.year] + ':' + r[C.sp];
+      const e = g.get(k) || { y: r[C.year], sp: r[C.sp], a: 0, j: 0, e: 0, gl: 0, rel: 0, n: new Set() };
+      e.a += r[C.adults]; e.j += r[C.jacks]; e.e += r[C.eggtake];
+      e.rel += r[C.adults_rel];
+      if (r[C.egg_goal] > 0) e.gl += r[C.egg_goal];
+      if (r[C.adults] > 0) e.n.add(r[C.fac]);
+      g.set(k, e);
+    }
+    return {
+      name: 'By season and species',
+      columns: [['Season', 12], ['Season start', 11], ['Species', 13], ['Adults', 12],
+                ['Jacks', 11], ['Egg take', 14], ['Egg take goal', 14],
+                ['Goal attainment %', 15], ['Adults released', 15],
+                ['Facilities', 11]].map(([label, width]) => ({ label, width })),
+      rows: [...g.values()].sort((a, b) => a.y - b.y || a.sp - b.sp).map(e => [
+        season(e.y), e.y, A.species[e.sp], e.a, e.j, e.e, e.gl || '',
+        e.gl ? +(e.e / e.gl * 100).toFixed(1) : '', e.rel, e.n.size
+      ])
+    };
+  }
+  if (scope === 'facility') {
+    const g = new Map();
+    for (const r of rows) {
+      const k = r[C.fac] + ':' + r[C.year];
+      const e = g.get(k) || { f: r[C.fac], y: r[C.year], a: 0, j: 0, e: 0, rel: 0, sp: new Map() };
+      e.a += r[C.adults]; e.j += r[C.jacks]; e.e += r[C.eggtake]; e.rel += r[C.adults_rel];
+      e.sp.set(r[C.sp], (e.sp.get(r[C.sp]) || 0) + r[C.adults]);
+      g.set(k, e);
+    }
+    return {
+      name: 'By facility and season',
+      columns: [['Facility', 24], ['Season', 12], ['Season start', 11], ['County', 14],
+                ['WRIA', 7], ['Latitude', 11], ['Longitude', 11], ['Adults', 12],
+                ['Jacks', 11], ['Egg take', 14], ['Adults released', 15],
+                ['Largest run', 13]].map(([label, width]) => ({ label, width })),
+      rows: [...g.values()].sort((a, b) =>
+        A.facilities[a.f].localeCompare(A.facilities[b.f]) || a.y - b.y).map(e => {
+        const gg = geoOf(e.f);
+        let top = '', tv = -1;
+        for (const [sp, v] of e.sp) if (v > tv) { tv = v; top = A.species[sp]; }
+        return [A.facilities[e.f], season(e.y), e.y,
+                gg ? (gg[GC.county] || '') : '', gg ? gg[GC.wria] : '',
+                gg ? gg[GC.lat] : '', gg ? gg[GC.lon] : '',
+                e.a, e.j, e.e, e.rel, top];
+      })
+    };
+  }
+  /* sites */
+  const tot = new Map();
+  for (const r of rows) tot.set(r[C.fac], (tot.get(r[C.fac]) || 0) + r[C.adults]);
+  const facs = [...new Set(rows.map(r => r[C.fac]))].filter(f => geoOf(f));
+  return {
+    name: 'Facility locations',
+    columns: [['Facility', 24], ['GIS name', 26], ['Type', 16], ['Owner class', 13],
+              ['Operator', 22], ['County', 14], ['WRIA', 7], ['Waterbody', 22],
+              ['System', 20], ['Active', 8], ['Elevation ft', 12],
+              ['Latitude', 11], ['Longitude', 11],
+              ['Adults in range', 14]].map(([label, width]) => ({ label, width })),
+    rows: facs.sort((a, b) => A.facilities[a].localeCompare(A.facilities[b])).map(f => {
+      const g = geoOf(f);
+      return [A.facilities[f], g[GC.gis_name] || '', g[GC.type] || '',
+              g[GC.owner_class] || '', g[GC.operator] || '', g[GC.county] || '',
+              g[GC.wria] ?? '', g[GC.waterbody] || '', g[GC.system] || '',
+              g[GC.active] || '', g[GC.elev_ft] ?? '', g[GC.lat], g[GC.lon],
+              tot.get(f) || 0];
+    })
+  };
+}
+
+function stamp() {
+  const { years } = slice();
+  const sp = [...state.species].map(s => A.species[s]).sort().join(', ') || 'all species';
+  const reg = state.region === '' ? 'all regions' : A.regions[+state.region];
+  const bo = state.bo === '' ? 'all origins' : BO_NAME[+state.bo];
+  return { range: `${season(years[0])} to ${season(years[years.length - 1])}`,
+           sp, reg, bo,
+           built: RAW.meta && RAW.meta.built ? RAW.meta.built.slice(0, 10) : '' };
+}
+const fileStem = () => `wdfw-escapement-${state.expScope}-${state.from}-${state.to}`;
+
+function exportCSV() {
+  const t = tableFor(state.expScope);
+  const esc = v => (v == null) ? '' :
+    /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  const lines = [t.columns.map(c => esc(c.label)).join(',')];
+  for (const r of t.rows) lines.push(r.map(esc).join(','));
+  saveBlob(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }),
+           fileStem() + '.csv');
+}
+
+function exportXLSX() {
+  const t = tableFor(state.expScope);
+  const s = stamp();
+  const about = {
+    name: 'About', columns: [{ label: 'Field', width: 22 }, { label: 'Value', width: 74 }],
+    rows: [
+      ['Dataset', 'WDFW hatchery escapement, ' + t.name],
+      ['Source', 'https://wdfw.wa.gov/fishing/management/hatcheries/escapement'],
+      ['Seasons in this file', s.range],
+      ['Species filter', s.sp],
+      ['Region filter', s.reg],
+      ['Origin filter', s.bo],
+      ['Coordinates', 'WDFW FP_FishMaps/HatcheryLikeFacilities GIS layer (WGS84)'],
+      ['Data built', s.built],
+      ['Exported', new Date().toISOString().slice(0, 19).replace('T', ' ') + ' UTC'],
+      ['Escapement means', 'adults returning to a hatchery rack or trap — not the total river run'],
+      ['Jacks', 'early-maturing males, counted separately from adults'],
+      ['Origin', 'H hatchery, W wild, M mixed; M rows usually carry egg take rather than fish'],
+      ['Egg take goal', 'from the WDFW Future Brood Document; blank where the report prints NA'],
+      ['Season', 'a spawning cycle running approximately March to the following March'],
+    ]
+  };
+  saveBlob(buildXLSX([t, about], 'WDFW hatchery escapement — ' + t.name),
+    fileStem() + '.xlsx');
+}
+
+function exportDOCX() {
+  const t = tableFor(state.expScope);
+  const s = stamp();
+  const MAXR = 400;
+  const rows = t.rows.slice(0, MAXR);
+  const blocks = [
+    { h: 'WDFW hatchery escapement' },
+    { p: `${t.name} · ${s.range}` },
+    { h2: 'Selection' },
+    { p: `Species: ${s.sp}. Region: ${s.reg}. Origin: ${s.bo}. ` +
+         `${t.rows.length.toLocaleString('en-US')} rows in the selection` +
+         (t.rows.length > MAXR ? `; the first ${MAXR} are tabulated below — use the Excel or CSV export for the full set.` : '.') },
+    { h2: 'Notes' },
+    { p: 'Escapement here means adults returning to a hatchery rack or trap, not the total run to a river: fish that spawn below the rack, are harvested, or pass an idle trap are not counted. Jacks are early-maturing males and are counted separately. Egg-take goals come from the WDFW Future Brood Document and are blank where the source report prints NA.' },
+    { p: `Source: WDFW Hatchery Escapement Reports, https://wdfw.wa.gov/fishing/management/hatcheries/escapement. Coordinates from the WDFW HatcheryLikeFacilities GIS layer. Data built ${s.built}.` },
+    { h2: t.name },
+    { table: { columns: t.columns, rows } },
+  ];
+  saveBlob(buildDOCX('WDFW hatchery escapement — ' + t.name, blocks),
+           fileStem() + '.docx');
+}
+
+function siteFeatures() {
+  const { rows } = slice();
+  const tot = new Map(), eggs = new Map(), mix = new Map(), yrs = new Map();
+  for (const r of rows) {
+    tot.set(r[C.fac], (tot.get(r[C.fac]) || 0) + r[C.adults]);
+    eggs.set(r[C.fac], (eggs.get(r[C.fac]) || 0) + r[C.eggtake]);
+    mix.set(r[C.fac] + ':' + r[C.sp], (mix.get(r[C.fac] + ':' + r[C.sp]) || 0) + r[C.adults]);
+    if (!yrs.has(r[C.fac])) yrs.set(r[C.fac], new Set());
+    yrs.get(r[C.fac]).add(r[C.year]);
+  }
+  const out = [];
+  for (const [fac, v] of tot) {
+    const g = geoOf(fac);
+    if (!g) continue;
+    let top = '', tv = -1;
+    for (const sp of SP_ORDER) {
+      const x = mix.get(fac + ':' + sp) || 0;
+      if (x > tv) { tv = x; top = A.species[sp]; }
+    }
+    const ys = [...yrs.get(fac)].sort((a, b) => a - b);
+    out.push({
+      fac, lat: g[GC.lat], lon: g[GC.lon],
+      props: {
+        facility: A.facilities[fac], gis_name: g[GC.gis_name] || '',
+        facility_type: g[GC.type] || '', owner_class: g[GC.owner_class] || '',
+        operator: g[GC.operator] || '', county: g[GC.county] || '',
+        wria: g[GC.wria] ?? null, waterbody: g[GC.waterbody] || '',
+        system: g[GC.system] || '', active: g[GC.active] || '',
+        elevation_ft: g[GC.elev_ft] ?? null,
+        adults_total: v, eggtake_total: eggs.get(fac) || 0,
+        largest_run: top, seasons: ys.length,
+        first_season: season(ys[0]), last_season: season(ys[ys.length - 1])
+      }
+    });
+  }
+  return out.sort((a, b) => b.props.adults_total - a.props.adults_total);
+}
+
+function exportGeoJSON() {
+  const s = stamp();
+  const fc = {
+    type: 'FeatureCollection',
+    name: 'WDFW hatchery escapement ' + s.range,
+    crs: { type: 'name', properties: { name: 'urn:ogc:def:crs:OGC:1.3:CRS84' } },
+    metadata: {
+      source: 'https://wdfw.wa.gov/fishing/management/hatcheries/escapement',
+      coordinates: 'WDFW FP_FishMaps/HatcheryLikeFacilities (WGS84)',
+      seasons: s.range, species_filter: s.sp, region_filter: s.reg,
+      origin_filter: s.bo, built: s.built,
+      exported: new Date().toISOString()
+    },
+    features: siteFeatures().map(f => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [f.lon, f.lat] },
+      properties: f.props
+    }))
+  };
+  saveBlob(new Blob([JSON.stringify(fc, null, 1)],
+    { type: 'application/geo+json' }), fileStem() + '.geojson');
+}
+
+function exportKML() {
+  const s = stamp();
+  const feats = siteFeatures();
+  const maxA = Math.max(1, ...feats.map(f => f.props.adults_total));
+  const styles = [0, 1, 2, 3, 4].map(i =>
+    `<Style id="s${i}"><IconStyle><scale>${(0.5 + i * 0.28).toFixed(2)}</scale><color>ff${
+      ['d6782a', '3468eb', '7aaf1b', '00a1ed', '4881e8'][i]}</color><Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle><LabelStyle><scale>0.7</scale></LabelStyle></Style>`).join('');
+  const marks = feats.map(f => {
+    const p = f.props;
+    const bucket = Math.min(4, Math.floor(Math.sqrt(p.adults_total / maxA) * 5));
+    const desc = Object.entries(p).map(([k, v]) =>
+      `<tr><td><b>${xmlEsc(k.replace(/_/g, ' '))}</b></td><td>${
+        xmlEsc(typeof v === 'number' ? v.toLocaleString('en-US') : v)}</td></tr>`).join('');
+    return `<Placemark><name>${xmlEsc(p.facility)}</name><styleUrl>#s${bucket}</styleUrl>` +
+      `<description><![CDATA[<table>${desc}</table>]]></description>` +
+      `<ExtendedData>${Object.entries(p).map(([k, v]) =>
+        `<Data name="${xmlEsc(k)}"><value>${xmlEsc(v)}</value></Data>`).join('')}</ExtendedData>` +
+      `<Point><coordinates>${f.lon},${f.lat},0</coordinates></Point></Placemark>`;
+  }).join('');
+  const kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>WDFW hatchery escapement ${
+    xmlEsc(s.range)}</name><description><![CDATA[Species: ${xmlEsc(s.sp)}. Region: ${
+    xmlEsc(s.reg)}. Origin: ${xmlEsc(s.bo)}.<br/>Source: WDFW Hatchery Escapement Reports. Coordinates: WDFW HatcheryLikeFacilities GIS layer.]]></description>${styles}${marks}</Document></kml>`;
+  saveBlob(new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' }),
+           fileStem() + '.kml');
+}
+
+const EXPORTS = [
+  ['XLSX', 'Excel workbook', 'data sheet plus a provenance sheet', '#1d7044', exportXLSX],
+  ['DOCX', 'Word document', 'formatted table with source notes', '#2b579a', exportDOCX],
+  ['CSV', 'Comma-separated', 'opens anywhere; UTF-8 with BOM', '#5c6f6b', exportCSV],
+  ['GEO', 'GeoJSON', 'ArcGIS, QGIS, Leaflet, Mapbox', '#8a4b2a', exportGeoJSON],
+  ['KML', 'Google Earth', 'placemarks scaled by return size', '#a03a5c', exportKML],
+  ['PRT', 'Print / PDF', 'opens your print dialogue', '#4a4a48', () => window.print()],
+];
+
+function renderExport() {
+  const host = $('exp-scope');
+  if (!host.dataset.built) {
+    host.dataset.built = '1';
+    for (const [id, label, hint] of SCOPES) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'chip'; b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', state.expScope === id);
+      b.setAttribute('aria-pressed', state.expScope === id);
+      b.title = hint;
+      const k = document.createElement('span');
+      k.className = 'key'; k.style.background = cssv('--accent');
+      const t = document.createElement('span'); t.textContent = label;
+      b.append(k, t); host.appendChild(b);
+      b.addEventListener('click', () => {
+        state.expScope = id;
+        [...host.children].forEach((c, i) => {
+          c.setAttribute('aria-checked', SCOPES[i][0] === id);
+          c.setAttribute('aria-pressed', SCOPES[i][0] === id);
+        });
+        renderExport();
+      });
+    }
+    const grid = $('exp-buttons');
+    for (const [ico, label, hint, colour, fn] of EXPORTS) {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'exp';
+      const i = document.createElement('span');
+      i.className = 'ico'; i.textContent = ico; i.style.background = colour;
+      const box = document.createElement('span');
+      const t = document.createElement('b'); t.textContent = label;
+      const h = document.createElement('span'); h.textContent = hint;
+      box.append(t, h); b.append(i, box); grid.appendChild(b);
+      b.addEventListener('click', () => {
+        try { fn(); } catch (e) {
+          $('exp-detail').textContent = 'Export failed: ' + e.message;
+        }
+      });
+    }
+  }
+  const t = tableFor(state.expScope);
+  const s = stamp();
+  const geoScope = state.expScope === 'sites';
+  $('exp-detail').textContent =
+    `${fmt(t.rows.length)} rows · ${t.columns.length} columns · ${s.range} · ` +
+    `${s.sp} · ${s.reg} · ${s.bo}. ` +
+    (geoScope ? 'GeoJSON and KML carry one point per facility.'
+              : 'GeoJSON and KML always export facility points regardless of this choice.') +
+    ' Word tables are capped at 400 rows; Excel and CSV carry everything.';
+}
+</script>
+
+<script>
+"use strict";
+if (W) $('wk-count').textContent = fmt(W.n_reports);
+(function provenance() {
+  const m = RAW.meta || {};
+  const bits = [];
+  if (m.n_annual_reports) bits.push(`${m.n_annual_reports} annual reports`);
+  if (m.n_weekly_reports) bits.push(`${fmt(m.n_weekly_reports)} weekly reports`);
+  if (RAW.geo) bits.push(`${RAW.geo.n} geocoded facilities`);
+  const el = $('foot-build');
+  if (!el) return;
+  const b = document.createElement('strong'); b.textContent = 'Build. ';
+  el.appendChild(b);
+  el.appendChild(document.createTextNode(
+    bits.join(' · ') +
+    (m.built ? ` · data compiled ${m.built.slice(0, 10)}` : '') +
+    (m.latest_fetch ? ` · sources last fetched ${m.latest_fetch.slice(0, 10)}` : '') +
+    '. Re-run the pipeline to pick up new weekly reports.'));
+})();
+let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderAll, 160); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(renderAll, 30));
+new MutationObserver(() => setTimeout(renderAll, 30))
+  .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+renderAll();
+</script>
+
