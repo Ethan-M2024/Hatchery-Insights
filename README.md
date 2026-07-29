@@ -55,13 +55,14 @@ Notepad if you want to read exactly what it does first.
 <summary>Prefer the command line?</summary>
 
 ```bash
-pip install -r requirements.txt
+pip install --require-hashes -r requirements.lock.txt   # SHA-256 verified
 python src/pipeline.py             # update, validate, rebuild, open
 python src/pipeline.py --check     # run the accuracy audit only, no network
 python src/pipeline.py --full      # ignore all caches, rebuild from the PDFs (~25 min)
 python src/pipeline.py --no-open   # skip launching the browser
 ```
-Python 3.9+ on Windows, macOS or Linux. The only dependency is `pdfplumber`.
+Python 3.9+ on Windows, macOS or Linux. The only direct dependency is
+`pdfplumber`; the lock file pins its whole tree by hash.
 </details>
 
 ---
