@@ -139,6 +139,25 @@ If the page is ever modified to call out to a third party, the browser blocks it
 - **No `subprocess`, `eval`, `exec`, `pickle`, or shell interpolation** in the Python.
   The parse cache is JSON, never pickle — pickle would be straightforward RCE.
 
+## What was checked, and what was not
+
+**Checked and clean:** the code in this repository, its git history, the built page,
+every export format, the workflow's triggers and token scope, and the pinned
+dependency versions against the OSV vulnerability database (no known advisories at
+the time of the audit).
+
+**Not audited:** the source of `pdfplumber` and its dependency tree — roughly 50,000
+lines across `pdfminer.six`, `pillow`, `cryptography`, `cffi` and `pypdfium2`. Those
+are widely used and actively maintained, but they are trusted, not verified, and
+`pillow` and `cryptography` have both carried CVEs in the past. Dependabot alerts are
+enabled precisely because pinning by hash stops a bad release getting in but also
+stops a good one arriving on its own.
+
+**Also not covered by anything in this repository:** the security of the GitHub
+account itself. A repository is only as safe as the account that owns it — 2FA, the
+scope of any personal access tokens on your machine, and who has write access matter
+more than anything in this codebase.
+
 ## Residual risks, accepted and stated
 
 - **`pdfplumber` parses files from the internet.** A malicious PDF that exploited a
@@ -160,6 +179,17 @@ If the page is ever modified to call out to a third party, the browser blocks it
   (find the exact address under GitHub → Settings → Emails, and tick *Keep my email
   address private*). Rewriting existing history would change every commit hash; that
   is usually not worth it for a public data project.
+
+## Keeping it that way
+
+- **Act on Dependabot alerts.** They are on, and with hashed pins they are the only
+  thing that will tell you a dependency has gone bad. Move the pin, then
+  `python src/lock_requirements.py`.
+- **Do not remove `--require-hashes`** from the launchers to make an install error go
+  away. That check is the supply-chain defence.
+- **Re-run the exploit tests** after touching `src/safety.py` or `weekly_filename()`.
+- **Keep 2FA on the GitHub account** and avoid long-lived personal access tokens with
+  `repo` scope where a fine-grained token would do.
 
 ## Reporting a problem
 
