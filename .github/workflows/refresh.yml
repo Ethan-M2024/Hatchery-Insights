@@ -1,9 +1,12 @@
-name: Weekly refresh
+name: Daily refresh
 
-# WDFW posts a new in-season report most Thursdays; this picks it up on Friday.
+# WDFW posts a new in-season report most Thursdays, but not always, and a run can
+# fail. Checking daily means a report is picked up within a day of appearing instead
+# of waiting for a weekly slot. The build is deterministic, so a day with no new
+# report produces identical bytes and commits nothing.
 on:
   schedule:
-    - cron: '0 15 * * 5'      # Fridays, 15:00 UTC (08:00 Pacific)
+    - cron: '0 15 * * *'      # every day, 15:00 UTC (08:00 Pacific)
   workflow_dispatch:           # ...or run it by hand from the Actions tab
 
 permissions:
@@ -60,5 +63,5 @@ jobs:
             exit 0
           fi
           git add data docs
-          git commit -m "Weekly refresh: $(date -u +%Y-%m-%d)"
+          git commit -m "Data refresh: $(date -u +%Y-%m-%d)"
           git push

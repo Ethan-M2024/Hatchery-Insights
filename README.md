@@ -292,12 +292,28 @@ Facility coordinates, county, WRIA and waterbody come from WDFW's
 **HatcheryLikeFacilities** GIS layer, joined by name. All 101 hatcheries matched; a
 handful map a counting point (a dam ladder, a weir) onto its parent hatchery.
 
-## Automatic weekly refresh
+## Does it update itself?
 
-`.github/workflows/refresh.yml` runs every Friday morning, pulls in whatever WDFW
-posted that week, re-runs the audit and commits the result. If the audit fails,
-nothing is committed and the run is marked red. You can also trigger it by hand from
-the **Actions** tab.
+**The hosted dashboard: yes.** `.github/workflows/refresh.yml` runs every morning,
+pulls in anything WDFW has posted, re-runs the full audit, rebuilds the page and
+commits it. GitHub Pages caches for ten minutes, so a refresh after that picks up the
+new build automatically — no action from anyone. If the audit fails nothing is
+committed and the run goes red, so a bad build cannot quietly replace a good one.
+The build is deterministic, so a day with no new report commits nothing at all.
+
+This also means new runs appear on their own. The "runs under way" table is computed
+at build time from whatever is in the data, so when coho start returning in autumn
+they show up without anyone touching the code.
+
+**A copy you downloaded: no.** It is a file; it shows what it contained when it was
+built. That is deliberate — it works offline, on a USB stick, attached to an email.
+Double-click the updater to refresh it, and the page tells you how old it is either
+way: a green dot when it is current with WDFW, amber with an explanation once the
+newest report in the copy is more than three weeks old.
+
+**Neither can be fresher than WDFW.** They publish weekly, usually Thursdays. Nothing
+here parses PDFs in a browser, so "live" means "as current as the last published
+report", and the daily job exists to make sure that is never more than a day late.
 
 ## Security
 

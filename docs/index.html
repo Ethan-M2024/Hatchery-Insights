@@ -89,6 +89,12 @@ h1 {
 }
 .standfirst a { color: var(--accent); text-underline-offset: 3px; }
 .currency { font-size: 14px; color: var(--ink-3); margin-top: 8px; }
+.freshness {
+  font-size: 13px; margin-top: 6px; display: flex; align-items: center; gap: 7px;
+}
+.freshness .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.freshness.fresh { color: var(--ink-3); }
+.freshness.stale { color: var(--ink-2); }
 .currency b { color: var(--ink-2); font-weight: 600; }
 .tag-prelim {
   display: inline-block; font-family: var(--mono); font-size: 10px;
@@ -411,6 +417,7 @@ code { font-family: var(--mono); font-size: .92em; }
     <a href="https://wdfw.wa.gov/fishing/management/hatcheries/escapement" target="_blank" rel="noopener">Source&nbsp;↗</a>
   </p>
   <p class="standfirst currency" id="currency"></p>
+  <p class="freshness" id="freshness"></p>
 
   <div class="hero">
     <div class="hero-figure">
@@ -4205,6 +4212,31 @@ function renderFacProfile(fac, rows, years) {
 
 <script>
 "use strict";
+/* Say plainly how current this copy is. The hosted page rebuilds daily and a refresh
+   picks that up; a downloaded copy does not, so it needs to admit when it has aged. */
+(function freshness() {
+  const el = $('freshness');
+  const m = RAW.meta || {};
+  if (!el || !m.latest_report) return;
+  const newest = new Date(m.latest_report + 'T00:00:00Z');
+  const days = Math.floor((Date.now() - newest.getTime()) / 86400000);
+  const stale = days > 21;
+  el.className = 'freshness ' + (stale ? 'stale' : 'fresh');
+  const dot = document.createElement('span');
+  dot.className = 'dot';
+  dot.style.background = cssv(stale ? '--warn' : '--good');
+  el.appendChild(dot);
+  const txt = document.createElement('span');
+  txt.textContent = stale
+    ? `Newest report in this copy is from ${m.latest_report}, ${days} days ago. `
+      + `WDFW publishes weekly — run the updater, or open the hosted version, for `
+      + `anything more recent.`
+    : `Data current to the WDFW report of ${m.latest_report}`
+      + (days <= 1 ? ' — as fresh as the source gets.'
+                   : ` (${days} days ago; WDFW publishes weekly).`);
+  el.appendChild(txt);
+})();
+
 (function currency() {
   const el = $('currency');
   if (!el) return;
