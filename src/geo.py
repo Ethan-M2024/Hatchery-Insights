@@ -9,9 +9,11 @@ import json, re, sys, urllib.request, urllib.parse, time
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths
+import safety
 from paths import open_text
 
 
+UA = 'Mozilla/5.0 (compatible; wdfw-escapement-dashboard/1.0)'
 GIS_LAYERS = [1, 2, 3, 4, 5, 12]
 BASE = ("https://geodataservices.wdfw.wa.gov/arcgis/rest/services/"
         "FP_FishMaps/HatcheryLikeFacilities/MapServer/{}/query")
@@ -84,7 +86,8 @@ def fetch_gis(path=None, refresh=False):
             q = urllib.parse.urlencode({'where': '1=1', 'outFields': FIELDS,
                                         'returnGeometry': 'false', 'f': 'json',
                                         'resultOffset': off, 'resultRecordCount': 1000})
-            d = json.load(urllib.request.urlopen(BASE.format(lid) + '?' + q, timeout=90))
+            d = json.loads(safety.fetch(BASE.format(lid) + '?' + q, timeout=90,
+                                        user_agent=UA))
             fs = d.get('features', [])
             for f in fs:
                 a = f['attributes']

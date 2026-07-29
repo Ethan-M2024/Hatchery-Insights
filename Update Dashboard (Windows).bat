@@ -35,9 +35,14 @@ if not exist ".venv\Scripts\python.exe" (
 
 call ".venv\Scripts\activate.bat"
 python -m pip install --quiet --upgrade pip >nul 2>&1
-python -m pip install --quiet -r requirements.txt
+REM Install from the hash-locked list: pip verifies the SHA-256 of every package
+REM and refuses anything that does not match.
+python -m pip install --quiet --require-hashes -r requirements.lock.txt
 if errorlevel 1 (
-  echo   Could not install the requirements.
+  echo.
+  echo   Could not install the verified dependencies.
+  echo   If this persists, check your internet connection. Do NOT bypass the
+  echo   hash check - it is what protects you from a tampered package.
   pause
   exit /b 1
 )

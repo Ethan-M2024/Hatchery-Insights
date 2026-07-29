@@ -230,6 +230,24 @@
   "sha": "30c668f8bd7074367b40ce7c08166522dd533551665a38cb9aafd3f4daa18377",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-03/Weekly%20Escapement%203-28-2019.pdf"
  },
+ "w:2019-03__Weekly_Escapement_3-14-2019.pdf": {
+  "bytes": 42442,
+  "fetched": "2026-07-29T03:11:10+00:00",
+  "sha": "8654a7b7bad5f04ba9cf8d721e52da6d3cef029b05d3bf3f753a112aaabfb8c5",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-03/Weekly%20Escapement%203-14-2019.pdf"
+ },
+ "w:2019-03__Weekly_Escapement_3-21-2019.pdf": {
+  "bytes": 42661,
+  "fetched": "2026-07-29T03:11:10+00:00",
+  "sha": "783b17e7342687d5dd7fc3c3e9408ea2271b8063116d650811160b52632e60d8",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-03/Weekly%20Escapement%203-21-2019.pdf"
+ },
+ "w:2019-03__Weekly_Escapement_3-28-2019.pdf": {
+  "bytes": 46806,
+  "fetched": "2026-07-29T03:11:10+00:00",
+  "sha": "30c668f8bd7074367b40ce7c08166522dd533551665a38cb9aafd3f4daa18377",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-03/Weekly%20Escapement%203-28-2019.pdf"
+ },
  "w:2019-04__Weekly Escapement 4-11-2019.pdf": {
   "bytes": 50960,
   "fetched": "2026-07-28T23:58:11+00:00",
@@ -251,6 +269,30 @@
  "w:2019-04__Weekly Escapement 4-4-2019.pdf": {
   "bytes": 50719,
   "fetched": "2026-07-28T23:58:11+00:00",
+  "sha": "3550a0bebf25c37250c34784121f356399fe0151b057bee567a6457aa6c5dce7",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-04/Weekly%20Escapement%204-4-2019.pdf"
+ },
+ "w:2019-04__Weekly_Escapement_4-11-2019.pdf": {
+  "bytes": 50960,
+  "fetched": "2026-07-29T03:11:10+00:00",
+  "sha": "faa143a2dddbef52d7063e89e20504dd7bf16e59e3ccd70619a8da639f119c7f",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-04/Weekly%20Escapement%204-11-2019.pdf"
+ },
+ "w:2019-04__Weekly_Escapement_4-18-2019.pdf": {
+  "bytes": 54148,
+  "fetched": "2026-07-29T03:11:11+00:00",
+  "sha": "f820ce7d9e8dd51d9dfe008e9bfddaaf830dbd89f1e40085c8d0184765db7989",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-04/Weekly%20Escapement%204-18-2019.pdf"
+ },
+ "w:2019-04__Weekly_Escapement_4-25-2019.pdf": {
+  "bytes": 54151,
+  "fetched": "2026-07-29T03:11:11+00:00",
+  "sha": "799c61e0225ee77c5104ee84467cee3e900d11c1ddb4262a0355a0c16e7ee17a",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-04/Weekly%20Escapement%204-25-2019.pdf"
+ },
+ "w:2019-04__Weekly_Escapement_4-4-2019.pdf": {
+  "bytes": 50719,
+  "fetched": "2026-07-29T03:11:11+00:00",
   "sha": "3550a0bebf25c37250c34784121f356399fe0151b057bee567a6457aa6c5dce7",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-04/Weekly%20Escapement%204-4-2019.pdf"
  },
@@ -278,11 +320,29 @@
   "sha": "e66a1ea3d17f574feb9b6eae479795059b695a310814659de43ae8004ecaf130",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-05/Weekly_Escapement_5-16-2019.pdf"
  },
+ "w:2019-05__Weekly_Escapement_5-2-2019.pdf": {
+  "bytes": 58756,
+  "fetched": "2026-07-29T03:11:12+00:00",
+  "sha": "506969a7041945eb3e08d9915901835b14c358b547eb2f322b7dd7b1951ae6ff",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-05/Weekly%20Escapement%205-2-2019.pdf"
+ },
  "w:2019-05__Weekly_Escapement_5-23-2019.pdf": {
   "bytes": 64636,
   "fetched": "2026-07-28T23:58:13+00:00",
   "sha": "7c907554e940be7fbd95d8ca5992c919e6b8e81953eb76e18a15d16fb15be7c3",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-05/Weekly_Escapement_5-23-2019.pdf"
+ },
+ "w:2019-05__Weekly_Escapement_5-30-2019.pdf": {
+  "bytes": 68296,
+  "fetched": "2026-07-29T03:11:12+00:00",
+  "sha": "52073f86dc80c4c386ee266e1aebf6a25304af0b9ee407390a1e99fc011f790d",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-05/Weekly%20Escapement%205-30-2019.pdf"
+ },
+ "w:2019-05__Weekly_Escapement_5-9-2019.pdf": {
+  "bytes": 59596,
+  "fetched": "2026-07-29T03:11:12+00:00",
+  "sha": "3d83c2dc387f73748721558d8e4c4ce963d4453846f8c11f8fe189b100d86199",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-05/Weekly%20Escapement%205-9-2019.pdf"
  },
  "w:2019-06__Weekly Escapement 6-27-2019.pdf": {
   "bytes": 42167,
@@ -301,6 +361,18 @@
   "fetched": "2026-07-28T23:58:14+00:00",
   "sha": "5b88696a34e6cc40d7094ad98ed5c0ac18809b2bb1c024436d1c7bf11d942208",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-06/Weekly_Escapement_6-13-2019.pdf"
+ },
+ "w:2019-06__Weekly_Escapement_6-27-2019.pdf": {
+  "bytes": 42167,
+  "fetched": "2026-07-29T03:11:13+00:00",
+  "sha": "bf0386240e86d45c3482f72ceb35ce0e1df31b64122c1c164d0bf6d99b2b31fb",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-06/Weekly%20Escapement%206-27-2019.pdf"
+ },
+ "w:2019-06__Weekly_Escapement_6-6-2019.pdf": {
+  "bytes": 45300,
+  "fetched": "2026-07-29T03:11:13+00:00",
+  "sha": "96dfb5a979044ce6dbed886708b5e4125910b795f91a9940ebe538f0b8da067e",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-06/Weekly%20Escapement%206-6-2019.pdf"
  },
  "w:2019-06__weekly_escapement_6-20-2019.pdf": {
   "bytes": 51318,
@@ -325,6 +397,18 @@
   "fetched": "2026-07-28T23:58:15+00:00",
   "sha": "fbf58b5940068e35706d0f1cec4bc4e75300e944c16647c12858d6fc17cbc1a4",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-07/Weekly_Escapement_7-11-2019.pdf"
+ },
+ "w:2019-07__Weekly_Escapement_7-18-2019.pdf": {
+  "bytes": 49631,
+  "fetched": "2026-07-29T03:11:13+00:00",
+  "sha": "311791dc2b276e7c827a921a69f0b21f54d74c454f223316eac676dc89b1b622",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-07/Weekly%20Escapement%207-18-2019.pdf"
+ },
+ "w:2019-07__Weekly_Escapement_7-25-2019.pdf": {
+  "bytes": 56789,
+  "fetched": "2026-07-29T03:11:13+00:00",
+  "sha": "8453516def03b02b16801e294316ea0c34f7aaec24f37f39b5ac8a6e5f2c9c24",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-07/Weekly%20Escapement%207-25-2019.pdf"
  },
  "w:2019-07__weekly_escapement_7-3-2019.pdf": {
   "bytes": 45523,
@@ -356,11 +440,35 @@
   "sha": "62675e5b20d2ab29822e153c41b4656be470a59c087fd8a667b825a87b694ddf",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-08/Weekly%20Escapement%208-29-2019.pdf"
  },
+ "w:2019-08__Weekly_Escapement_8-01-2019.pdf": {
+  "bytes": 57909,
+  "fetched": "2026-07-29T03:11:14+00:00",
+  "sha": "e98246c29747e979165348accaf5299dd37ae04236a82dac636ba49058e7ac73",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-08/Weekly%20Escapement%208-01-2019.pdf"
+ },
+ "w:2019-08__Weekly_Escapement_8-08-2019.pdf": {
+  "bytes": 59927,
+  "fetched": "2026-07-29T03:11:14+00:00",
+  "sha": "24e3f927419b254ba9f4e801161c8214bc7b4364e0d762c20805e4c25e0e345b",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-08/Weekly%20Escapement%208-08-2019.pdf"
+ },
+ "w:2019-08__Weekly_Escapement_8-15-2019.pdf": {
+  "bytes": 62792,
+  "fetched": "2026-07-29T03:11:14+00:00",
+  "sha": "1f833bc4295d24f0ffa2afa3a5bbaa095611547d1f8777d46f52325d0c3e9cae",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-08/Weekly%20Escapement%208-15-2019.pdf"
+ },
  "w:2019-08__Weekly_Escapement_8-22-2019.pdf": {
   "bytes": 65193,
   "fetched": "2026-07-28T23:58:17+00:00",
   "sha": "18a7d4df742d9d82937d96aa6cdf8ed77a622014e0d43894b2e06dde1848c75e",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-08/Weekly_Escapement_8-22-2019.pdf"
+ },
+ "w:2019-08__Weekly_Escapement_8-29-2019.pdf": {
+  "bytes": 69611,
+  "fetched": "2026-07-29T03:11:15+00:00",
+  "sha": "62675e5b20d2ab29822e153c41b4656be470a59c087fd8a667b825a87b694ddf",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-08/Weekly%20Escapement%208-29-2019.pdf"
  },
  "w:2019-09__Weekly Escapement 9-05-2019.pdf": {
   "bytes": 79735,
@@ -386,6 +494,30 @@
   "sha": "8504a3a9ab437e0f889a31da80be0eb504c7261b560c3a6eb5448914173f2def",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-09/Weekly%20Escapement%209-26-2019.pdf"
  },
+ "w:2019-09__Weekly_Escapement_9-05-2019.pdf": {
+  "bytes": 79735,
+  "fetched": "2026-07-29T03:11:15+00:00",
+  "sha": "642a473ff6449c014bf2935a1f09ffba2f988c8095fe602dba44574d77569d03",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-09/Weekly%20Escapement%209-05-2019.pdf"
+ },
+ "w:2019-09__Weekly_Escapement_9-12-2019.pdf": {
+  "bytes": 84823,
+  "fetched": "2026-07-29T03:11:15+00:00",
+  "sha": "646bfe7e9211281b89d5dfd8e24a14ec56862ccdd720e03db5d336f0a0a30338",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-09/Weekly%20Escapement%209-12-2019.pdf"
+ },
+ "w:2019-09__Weekly_Escapement_9-19-2019_0.pdf": {
+  "bytes": 90430,
+  "fetched": "2026-07-29T03:11:15+00:00",
+  "sha": "8088e27267488a3db3413f2c965935ecad5d27dd2b7d1e5af10a85a0084a4ec5",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-09/Weekly%20Escapement%209-19-2019_0.pdf"
+ },
+ "w:2019-09__Weekly_Escapement_9-26-2019.pdf": {
+  "bytes": 99276,
+  "fetched": "2026-07-29T03:11:16+00:00",
+  "sha": "8504a3a9ab437e0f889a31da80be0eb504c7261b560c3a6eb5448914173f2def",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-09/Weekly%20Escapement%209-26-2019.pdf"
+ },
  "w:2019-10__Weekly Escapement 10-03-2019.pdf": {
   "bytes": 109223,
   "fetched": "2026-07-28T23:58:19+00:00",
@@ -401,6 +533,24 @@
  "w:2019-10__Weekly Escapement 10-17-2019.pdf": {
   "bytes": 108749,
   "fetched": "2026-07-28T23:58:19+00:00",
+  "sha": "830be6f6d6af3a5d0e93513fae4f0c1169a140ba7124c5828dfc27cf2803716f",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-10/Weekly%20Escapement%2010-17-2019.pdf"
+ },
+ "w:2019-10__Weekly_Escapement_10-03-2019.pdf": {
+  "bytes": 109223,
+  "fetched": "2026-07-29T03:11:16+00:00",
+  "sha": "ba96ebbbe5e31dbcb066685bb185f2dd832ed3baccc46d789d2ac76803e2ea79",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-10/Weekly%20Escapement%2010-03-2019.pdf"
+ },
+ "w:2019-10__Weekly_Escapement_10-10-2019.pdf": {
+  "bytes": 105074,
+  "fetched": "2026-07-29T03:11:16+00:00",
+  "sha": "be74bba2d36f47f5833d8bbcb54f51a4620a353d273154bfa26db2fea37bf663",
+  "url": "https://wdfw.wa.gov/sites/default/files/2019-10/Weekly%20Escapement%2010-10-2019.pdf"
+ },
+ "w:2019-10__Weekly_Escapement_10-17-2019.pdf": {
+  "bytes": 108749,
+  "fetched": "2026-07-29T03:11:17+00:00",
   "sha": "830be6f6d6af3a5d0e93513fae4f0c1169a140ba7124c5828dfc27cf2803716f",
   "url": "https://wdfw.wa.gov/sites/default/files/2019-10/Weekly%20Escapement%2010-17-2019.pdf"
  },
@@ -1106,6 +1256,18 @@
   "sha": "57849de01cb25f8215b7ce26babe1c49de10790c3c8438b04f0bc235cab1f08a",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-01/Weekly%20Escapement_1-27-2022.pdf"
  },
+ "w:2022-01__Weekly_Escapement_1-20-2022.pdf": {
+  "bytes": 160428,
+  "fetched": "2026-07-29T03:11:17+00:00",
+  "sha": "c001d87235893efe682f527d35a431b3aaf0929b6a0117d8eb8ead91b2ba6bce",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-01/Weekly%20Escapement_1-20-2022.pdf"
+ },
+ "w:2022-01__Weekly_Escapement_1-27-2022.pdf": {
+  "bytes": 161634,
+  "fetched": "2026-07-29T03:11:17+00:00",
+  "sha": "57849de01cb25f8215b7ce26babe1c49de10790c3c8438b04f0bc235cab1f08a",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-01/Weekly%20Escapement_1-27-2022.pdf"
+ },
  "w:2022-01__weekly_escapement_01-07-2022.pdf": {
   "bytes": 150030,
   "fetched": "2026-07-28T23:58:57+00:00",
@@ -1142,6 +1304,30 @@
   "sha": "c22dad37d698c9b2a2aa3a7be6d7e7708f79531b2833980969394d09840b79da",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-02/Weekly%20Escapement_2-3-2022.pdf"
  },
+ "w:2022-02__Weekly_Escapement_02-24-2022.pdf": {
+  "bytes": 158457,
+  "fetched": "2026-07-29T03:11:18+00:00",
+  "sha": "49d1831506c9ffe357cfdd2fba2cbdeb3d57b9fed36a76a79a8f9c0b7fb9831f",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-02/Weekly%20Escapement_02-24-2022.pdf"
+ },
+ "w:2022-02__Weekly_Escapement_2-10-2022_ver2.pdf": {
+  "bytes": 162184,
+  "fetched": "2026-07-29T03:11:18+00:00",
+  "sha": "7f34e9583a861d4c8ad5a94fe2e15958654e06db7e170dab330eaead55590f22",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-02/Weekly%20Escapement_2-10-2022%20ver2.pdf"
+ },
+ "w:2022-02__Weekly_Escapement_2-17-2022.pdf": {
+  "bytes": 166598,
+  "fetched": "2026-07-29T03:11:18+00:00",
+  "sha": "7e49221de0ad49e8e33be3226814c46a259fafb73b173fc8fdd05bfcfe8d3fd2",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-02/Weekly%20Escapement_2-17-2022.pdf"
+ },
+ "w:2022-02__Weekly_Escapement_2-3-2022.pdf": {
+  "bytes": 166277,
+  "fetched": "2026-07-29T03:11:19+00:00",
+  "sha": "c22dad37d698c9b2a2aa3a7be6d7e7708f79531b2833980969394d09840b79da",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-02/Weekly%20Escapement_2-3-2022.pdf"
+ },
  "w:2022-03__Weekly Escapement_3-10-2022 add TP WYNO R Dam.pdf": {
   "bytes": 167467,
   "fetched": "2026-07-28T23:58:59+00:00",
@@ -1172,6 +1358,36 @@
   "sha": "0bebd032574738b02db304e5c0af91b136a7fe1b6bcd678eb17fdbf5a2d91be7",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-03/Weekly%20Escapement_3-31-2022_0.pdf"
  },
+ "w:2022-03__Weekly_Escapement_3-10-2022_add_TP_WYNO_R_Dam.pdf": {
+  "bytes": 167467,
+  "fetched": "2026-07-29T03:11:19+00:00",
+  "sha": "2e008e2b61bc6b8a4c498db50fd7085c105d0b59eaeaf2165dc70bdf0c52e86a",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-03/Weekly%20Escapement_3-10-2022%20add%20TP%20WYNO%20R%20Dam.pdf"
+ },
+ "w:2022-03__Weekly_Escapement_3-17-2022.pdf": {
+  "bytes": 51572,
+  "fetched": "2026-07-29T03:11:19+00:00",
+  "sha": "caa24ff45b13a9a8872a04b23e4f8fa546d233731732f6f3e48f04112a31a87e",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-03/Weekly%20Escapement_3-17-2022.pdf"
+ },
+ "w:2022-03__Weekly_Escapement_3-24-2022.pdf": {
+  "bytes": 51644,
+  "fetched": "2026-07-29T03:11:20+00:00",
+  "sha": "1494adaa7bbcc867606f51fe36662ef2f63a285d62125a6a4a43fee18f55ac74",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-03/Weekly%20Escapement_3-24-2022.pdf"
+ },
+ "w:2022-03__Weekly_Escapement_3-3-2022.pdf": {
+  "bytes": 169867,
+  "fetched": "2026-07-29T03:11:20+00:00",
+  "sha": "4981699452baa3bbacac11d2929f52ea4beeb6c1dc231a5a354bb892ecc07a0b",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-03/Weekly%20Escapement_3-3-2022.pdf"
+ },
+ "w:2022-03__Weekly_Escapement_3-31-2022_0.pdf": {
+  "bytes": 51926,
+  "fetched": "2026-07-29T03:11:20+00:00",
+  "sha": "0bebd032574738b02db304e5c0af91b136a7fe1b6bcd678eb17fdbf5a2d91be7",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-03/Weekly%20Escapement_3-31-2022_0.pdf"
+ },
  "w:2022-04__Weekly Escapement_4-07-2022.pdf": {
   "bytes": 124782,
   "fetched": "2026-07-28T23:59:01+00:00",
@@ -1196,6 +1412,30 @@
   "sha": "2b84c194f1750d123944a691d7b6e3ae28d3cee0ab83d987da2f1ecf7c232ca0",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-04/Weekly%20Escapement_4-28-2022.pdf"
  },
+ "w:2022-04__Weekly_Escapement_4-07-2022.pdf": {
+  "bytes": 124782,
+  "fetched": "2026-07-29T03:11:20+00:00",
+  "sha": "ca545728a833460d90106e4c0820c7ee5927d3d22eca33a616a6bfc47ebf5011",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-04/Weekly%20Escapement_4-07-2022.pdf"
+ },
+ "w:2022-04__Weekly_Escapement_4-14-2022.pdf": {
+  "bytes": 54897,
+  "fetched": "2026-07-29T03:11:21+00:00",
+  "sha": "7b9122f0cfb8f42b9c544328944416188da131fd9dedb46e475168e3975282d1",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-04/Weekly%20Escapement_4-14-2022.pdf"
+ },
+ "w:2022-04__Weekly_Escapement_4-21-2022.pdf": {
+  "bytes": 57948,
+  "fetched": "2026-07-29T03:11:21+00:00",
+  "sha": "7a31be9977905b49839e1441af1488ea2f89c8a52ac113014a7d3efa68020617",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-04/Weekly%20Escapement_4-21-2022.pdf"
+ },
+ "w:2022-04__Weekly_Escapement_4-28-2022.pdf": {
+  "bytes": 62014,
+  "fetched": "2026-07-29T03:11:21+00:00",
+  "sha": "2b84c194f1750d123944a691d7b6e3ae28d3cee0ab83d987da2f1ecf7c232ca0",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-04/Weekly%20Escapement_4-28-2022.pdf"
+ },
  "w:2022-05__Weekly Escapement_5-12-2022.pdf": {
   "bytes": 60712,
   "fetched": "2026-07-28T23:59:02+00:00",
@@ -1217,6 +1457,30 @@
  "w:2022-05__Weekly Escapement_5-5-2022.pdf": {
   "bytes": 135922,
   "fetched": "2026-07-28T23:59:03+00:00",
+  "sha": "c78b843461279b31ee7a5c70566b9aee3fd8da172f3ee8a7fec7562c42589c9a",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-05/Weekly%20Escapement_5-5-2022.pdf"
+ },
+ "w:2022-05__Weekly_Escapement_5-12-2022.pdf": {
+  "bytes": 60712,
+  "fetched": "2026-07-29T03:11:22+00:00",
+  "sha": "47653e0e708d46ef7a09186c173a56cef065af0f30a62ca0c5cec966f8dc7cd3",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-05/Weekly%20Escapement_5-12-2022.pdf"
+ },
+ "w:2022-05__Weekly_Escapement_5-19-2022.pdf": {
+  "bytes": 64537,
+  "fetched": "2026-07-29T03:11:22+00:00",
+  "sha": "ad3e689dd58a11ea239e9ca1b8aab0f10a7bd60cf6b79caed5e7864e734ac09c",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-05/Weekly%20Escapement_5-19-2022.pdf"
+ },
+ "w:2022-05__Weekly_Escapement_5-26-2022_0_1.pdf": {
+  "bytes": 65630,
+  "fetched": "2026-07-29T03:11:22+00:00",
+  "sha": "fcb54f4149bcbb1ed10d9195e49fb71bb8bf7dc2f3b0a1ad18792887a70e8982",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-05/Weekly%20Escapement_5-26-2022_0_1.pdf"
+ },
+ "w:2022-05__Weekly_Escapement_5-5-2022.pdf": {
+  "bytes": 135922,
+  "fetched": "2026-07-29T03:11:22+00:00",
   "sha": "c78b843461279b31ee7a5c70566b9aee3fd8da172f3ee8a7fec7562c42589c9a",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-05/Weekly%20Escapement_5-5-2022.pdf"
  },
@@ -1250,6 +1514,36 @@
   "sha": "169d786b8d0861588ee2ea8af3a0f6e3b1dcdffc1cd78860e84b1bad38822029",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-06/Weekly%20Escapement_6-30-2022.pdf"
  },
+ "w:2022-06__Weekly_Escapement_6-02-2022_0.pdf": {
+  "bytes": 69567,
+  "fetched": "2026-07-29T03:11:23+00:00",
+  "sha": "cab12240094b243cd456eda4473cb73e01b80472049b74ab05cad528df215c1b",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-06/Weekly%20Escapement_6-02-2022_0.pdf"
+ },
+ "w:2022-06__Weekly_Escapement_6-09-2022_0.pdf": {
+  "bytes": 72541,
+  "fetched": "2026-07-29T03:11:23+00:00",
+  "sha": "73f358ed81aa1c99ccdb2a19aad8340b769f37fc96debd361e3473c71e02d004",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-06/Weekly%20Escapement_6-09-2022_0.pdf"
+ },
+ "w:2022-06__Weekly_Escapement_6-16-2022.pdf": {
+  "bytes": 72212,
+  "fetched": "2026-07-29T03:11:23+00:00",
+  "sha": "f0ac3567200260dbf1d9fe433b99913259deea918467d31dd050b3d490895db6",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-06/Weekly%20Escapement_6-16-2022.pdf"
+ },
+ "w:2022-06__Weekly_Escapement_6-23-2022.pdf": {
+  "bytes": 152918,
+  "fetched": "2026-07-29T03:11:24+00:00",
+  "sha": "417f8ef75b536b62999eb3a03043f7635cd2e7998ced0e687fa7f884908400b8",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-06/Weekly%20Escapement_6-23-2022.pdf"
+ },
+ "w:2022-06__Weekly_Escapement_6-30-2022.pdf": {
+  "bytes": 158390,
+  "fetched": "2026-07-29T03:11:24+00:00",
+  "sha": "169d786b8d0861588ee2ea8af3a0f6e3b1dcdffc1cd78860e84b1bad38822029",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-06/Weekly%20Escapement_6-30-2022.pdf"
+ },
  "w:2022-07__Weekly Escapement_7-07-2022.pdf": {
   "bytes": 61742,
   "fetched": "2026-07-28T23:59:05+00:00",
@@ -1274,6 +1568,30 @@
   "sha": "5b83d3eb65b28b0c58a75805661feaeb59076629ebbf92398a0cda2dfdeb3830",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-07/Weekly%20Escapement_7-28-2022.pdf"
  },
+ "w:2022-07__Weekly_Escapement_7-07-2022.pdf": {
+  "bytes": 61742,
+  "fetched": "2026-07-29T03:11:24+00:00",
+  "sha": "f8be9e74906d1890c7af30b5e34bda42f412ebbea7fccddebb51252937f8dd35",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-07/Weekly%20Escapement_7-07-2022.pdf"
+ },
+ "w:2022-07__Weekly_Escapement_7-14-2022_0.pdf": {
+  "bytes": 61522,
+  "fetched": "2026-07-29T03:11:25+00:00",
+  "sha": "f6dfab9a6bb5e52843d30d684baa31983d4b76c265907ea9196ae5cd4c49aae5",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-07/Weekly%20Escapement_7-14-2022_0.pdf"
+ },
+ "w:2022-07__Weekly_Escapement_7-21-2022.pdf": {
+  "bytes": 67993,
+  "fetched": "2026-07-29T03:11:25+00:00",
+  "sha": "bce05f4ab58aef714b498e947b6412edfe937251aa40ee234d2c12a4f81e9699",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-07/Weekly%20Escapement_7-21-2022.pdf"
+ },
+ "w:2022-07__Weekly_Escapement_7-28-2022.pdf": {
+  "bytes": 141405,
+  "fetched": "2026-07-29T03:11:25+00:00",
+  "sha": "5b83d3eb65b28b0c58a75805661feaeb59076629ebbf92398a0cda2dfdeb3830",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-07/Weekly%20Escapement_7-28-2022.pdf"
+ },
  "w:2022-08__Weekly Escapement_8-04-2022.pdf": {
   "bytes": 71426,
   "fetched": "2026-07-28T23:59:06+00:00",
@@ -1295,6 +1613,30 @@
  "w:2022-08__Weekly Escapement_8-25-2022.pdf": {
   "bytes": 144488,
   "fetched": "2026-07-28T23:59:08+00:00",
+  "sha": "91f9481bb3dd948f6f1fd49bc4eb3fd1c1ea4afeb87dc946ccd5c034d29e26d9",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-08/Weekly%20Escapement_8-25-2022.pdf"
+ },
+ "w:2022-08__Weekly_Escapement_8-04-2022.pdf": {
+  "bytes": 71426,
+  "fetched": "2026-07-29T03:11:26+00:00",
+  "sha": "7e8b6181ac2924fc63ddf46aba8216a16fadceb2a86a70a7ca3d3f63a5847365",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-08/Weekly%20Escapement_8-04-2022.pdf"
+ },
+ "w:2022-08__Weekly_Escapement_8-11-2022.pdf": {
+  "bytes": 134611,
+  "fetched": "2026-07-29T03:11:26+00:00",
+  "sha": "f30f9543a2ca976aec3c87a00e182d4ba899e4950d2df6f7285b3e25887c8771",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-08/Weekly%20Escapement_8-11-2022.pdf"
+ },
+ "w:2022-08__Weekly_Escapement_8-18-2022.pdf": {
+  "bytes": 64081,
+  "fetched": "2026-07-29T03:11:26+00:00",
+  "sha": "b7bc1bd9b198ddcb43693df2155056952d370addd84e97118aa90fa4cd447f7a",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-08/Weekly%20Escapement_8-18-2022.pdf"
+ },
+ "w:2022-08__Weekly_Escapement_8-25-2022.pdf": {
+  "bytes": 144488,
+  "fetched": "2026-07-29T03:11:26+00:00",
   "sha": "91f9481bb3dd948f6f1fd49bc4eb3fd1c1ea4afeb87dc946ccd5c034d29e26d9",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-08/Weekly%20Escapement_8-25-2022.pdf"
  },
@@ -1328,6 +1670,36 @@
   "sha": "6639bb6836ef7c640c1444ccc4fa6ee6c55ee96e9542563ab93936802edf9411",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-09/Weekly%20Escapement_9-29-2022.pdf"
  },
+ "w:2022-09__Weekly_Escapement_9-01-2022.pdf": {
+  "bytes": 148283,
+  "fetched": "2026-07-29T03:11:27+00:00",
+  "sha": "6716561773640803442747a809cb00ac563e759927e84efc66c274a68b9a7eef",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-09/Weekly%20Escapement_9-01-2022.pdf"
+ },
+ "w:2022-09__Weekly_Escapement_9-08-2022.pdf": {
+  "bytes": 78373,
+  "fetched": "2026-07-29T03:11:27+00:00",
+  "sha": "d5a10e79fb9ec4efa873266a8df45a32476f704078277742c60b02e19029fd28",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-09/Weekly%20Escapement_9-08-2022.pdf"
+ },
+ "w:2022-09__Weekly_Escapement_9-15-2022.pdf": {
+  "bytes": 82356,
+  "fetched": "2026-07-29T03:11:27+00:00",
+  "sha": "480bd02e153494725413952b9c6c593f660be19de386a3b6241af00a4014f9cf",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-09/Weekly%20Escapement_9-15-2022.pdf"
+ },
+ "w:2022-09__Weekly_Escapement_9-22-2022B.pdf": {
+  "bytes": 88865,
+  "fetched": "2026-07-29T03:11:28+00:00",
+  "sha": "637e0a499e38b6ad92ca9f7a527da335060a7815fc14a133f46bd21edebaefd5",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-09/Weekly%20Escapement_9-22-2022B.pdf"
+ },
+ "w:2022-09__Weekly_Escapement_9-29-2022.pdf": {
+  "bytes": 93764,
+  "fetched": "2026-07-29T03:11:28+00:00",
+  "sha": "6639bb6836ef7c640c1444ccc4fa6ee6c55ee96e9542563ab93936802edf9411",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-09/Weekly%20Escapement_9-29-2022.pdf"
+ },
  "w:2022-10__Weekly Escapement_10-06-2022.pdf": {
   "bytes": 99760,
   "fetched": "2026-07-28T23:59:10+00:00",
@@ -1349,6 +1721,30 @@
  "w:2022-10__Weekly Escapement_10-27-2022_0.pdf": {
   "bytes": 119682,
   "fetched": "2026-07-28T23:59:10+00:00",
+  "sha": "f9a2e0fee33ca70fa3b29ab63d09dc90315788a97cb95723e7612e595a3334a0",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-10/Weekly%20Escapement_10-27-2022_0.pdf"
+ },
+ "w:2022-10__Weekly_Escapement_10-06-2022.pdf": {
+  "bytes": 99760,
+  "fetched": "2026-07-29T03:11:28+00:00",
+  "sha": "4f21943069b481c80e9ad8f7e86dfd00b0349d90f0b25068f7483d9f609027b6",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-10/Weekly%20Escapement_10-06-2022.pdf"
+ },
+ "w:2022-10__Weekly_Escapement_10-13-2022.pdf": {
+  "bytes": 107226,
+  "fetched": "2026-07-29T03:11:29+00:00",
+  "sha": "27952bfe4a5c3bf61c4b6fa833da41a1a975c2009207a3a5c9a41a20176818b3",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-10/Weekly%20Escapement_10-13-2022.pdf"
+ },
+ "w:2022-10__Weekly_Escapement_10-20-2022.pdf": {
+  "bytes": 113989,
+  "fetched": "2026-07-29T03:11:29+00:00",
+  "sha": "31f7a4183164415fe2a4c67be5c975bd3d433d43c6f84ba6eb2536f77721beff",
+  "url": "https://wdfw.wa.gov/sites/default/files/2022-10/Weekly%20Escapement_10-20-2022.pdf"
+ },
+ "w:2022-10__Weekly_Escapement_10-27-2022_0.pdf": {
+  "bytes": 119682,
+  "fetched": "2026-07-29T03:11:29+00:00",
   "sha": "f9a2e0fee33ca70fa3b29ab63d09dc90315788a97cb95723e7612e595a3334a0",
   "url": "https://wdfw.wa.gov/sites/default/files/2022-10/Weekly%20Escapement_10-27-2022_0.pdf"
  },
