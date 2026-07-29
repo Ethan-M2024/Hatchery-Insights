@@ -1,0 +1,39 @@
+name: Weekly refresh
+
+# WDFW posts a new in-season report most Thursdays; this picks it up on Friday.
+on:
+  schedule:
+    - cron: '0 15 * * 5'      # Fridays, 15:00 UTC (08:00 Pacific)
+  workflow_dispatch:           # ...or run it by hand from the Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Fetch new reports, rebuild and validate
+        run: python src/pipeline.py --no-open
+
+      - name: Commit the refreshed data
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- data docs; then
+            echo "No new reports this week."
+            exit 0
+          fi
+          git add data docs
+          git commit -m "Weekly refresh: $(date -u +%Y-%m-%d)"
+          git push
