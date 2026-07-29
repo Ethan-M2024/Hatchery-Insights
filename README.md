@@ -211,6 +211,12 @@ WDFW's reports, not of this extraction:
   straight line nor normal errors. Sen's slope gives the magnitude. Results are banded
   honestly: p<0.01, p<0.05, and p<0.10 shown as *weak* rather than dressed up as
   significant.
+- **Run timing is measured per run type, not per species.** Summer and winter
+  steelhead arrive months apart; a combined median lands in November and describes
+  neither. Split out, summer steelhead reach halfway on 9 August and winter steelhead
+  on 27 December. Spring, summer and fall Chinook are separated the same way. The
+  combined series is still offered — it is what the annual reports total — but it is
+  labelled *all runs* and the note says why a run type is the better unit.
 - **Run-timing curves** are indexed by calendar week of the March-to-March season, so
   a week on the axis is the date it claims to be. An earlier version indexed weeks from
   the date each run was *detected*, which drifts by months between species — that put

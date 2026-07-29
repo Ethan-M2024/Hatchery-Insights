@@ -286,8 +286,11 @@ def check_preliminary():
     for r in A['rows']:
         if r[C['year']] in prelim:
             got[(A['species'][r[C['sp']]], r[C['year']])] += r[C['adults']]
+    # run-type series ("Chinook · Fall") exist for timing only; the preliminary rows
+    # are built per species group, so comparing the two would always fail
     expect = {(W['species'][s['sp']], s['season']): s['w'][-1][1]
-              for s in W['series'] if s['season'] in prelim}
+              for s in W['series']
+              if s['season'] in prelim and '\u00b7' not in W['species'][s['sp']]}
     bad, checked = [], 0
     for k, want in expect.items():
         if want < 500:

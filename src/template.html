@@ -1821,9 +1821,34 @@ function renderTiming() {
   if (!W) { $('panel-timing').classList.add('hidden'); return; }
   const sel = $('timing-species');
   if (!sel.options.length) {
-    W.species.forEach((n, i) => sel.appendChild(new Option(n, i)));
-    const pref = W.species.indexOf('Chinook');
-    state.timingSp = pref >= 0 ? pref : 0;
+    /* a run type is the unit that actually has a timing; the combined species is
+       kept because it is what the annual reports total, but it is listed second */
+    const usable = new Set(W.series.filter(s => s.done && s.from_start).map(s => s.sp));
+    const groups = new Map();
+    W.species.forEach((n, i) => {
+      const [g, race] = n.split(' \u00b7 ');
+      if (!groups.has(g)) groups.set(g, { combined: null, runs: [] });
+      if (race) groups.get(g).runs.push([n, i, race]);
+      else groups.get(g).combined = i;
+    });
+    for (const [g, info] of groups) {
+      const opts = [];
+      if (info.combined != null && usable.has(info.combined))
+        opts.push([`${g} — all runs`, info.combined]);
+      /* "Type N" and "Odd Year" are programme and cycle labels, not run timings,
+         so only the seasonal ones get called a run */
+      const SEASONAL = /^(Spring|Summer|Fall|Winter|Late|Winter-Late)$/i;
+      for (const [, i, race] of info.runs)
+        if (usable.has(i))
+          opts.push([`${g} — ${race}${SEASONAL.test(race) ? ' run' : ''}`, i]);
+      if (!opts.length) continue;
+      const og = document.createElement('optgroup');
+      og.label = g;
+      for (const [label, i] of opts) og.appendChild(new Option(label, i));
+      sel.appendChild(og);
+    }
+    const pref = W.species.indexOf('Chinook \u00b7 Fall');
+    state.timingSp = pref >= 0 && usable.has(pref) ? pref : +sel.options[0].value;
     sel.value = state.timingSp;
     sel.addEventListener('change', () => { state.timingSp = +sel.value; renderAll(); });
   }
@@ -1860,7 +1885,13 @@ function renderTiming() {
     { name: latest == null ? 'latest season' : season(latest) + ' (latest in range)', color: cssv('--s1') },
     { name: 'earlier seasons in range', color: cssv('--ink-3') }
   ]);
+  const selName = W.species[state.timingSp];
+  const hasRuns = !selName.includes('\u00b7')
+    && W.species.some(n => n.startsWith(selName + ' \u00b7'));
   $('timing-note').textContent =
+    (hasRuns ? `${selName} is several runs at once — spring, summer and autumn fish `
+             + `arrive months apart, so a combined median describes none of them. `
+             + `Pick a run from the list for a timing that means something. ` : '') +
     `Cumulative share of each season's adult ${W.species[state.timingSp]} count, by ` +
     `calendar week of the March-to-March season. Built from ${fmt(W.n_reports)} weekly ` +
     `in-season reports, which are cumulative season-to-date and preliminary. Seasons ` +
@@ -1902,12 +1933,17 @@ function renderMedian() {
                                .map(s => s.season))]
     .filter(y => y >= state.from && y <= state.to).sort((a, b) => a - b);
   const wanted = [...bySp.keys()]
-    .filter(sp => PRIMARY.includes(W.species[sp]))
-    .sort((a, b) => PRIMARY.indexOf(W.species[a]) - PRIMARY.indexOf(W.species[b]));
+    .filter(sp => {
+      const n = W.species[sp], g = n.split(' \u00b7 ')[0];
+      if (!PRIMARY.includes(g)) return false;
+      return n.includes('\u00b7') || !W.species.some(m => m.startsWith(g + ' \u00b7'));
+    })
+    .sort((a, b) => W.species[a].localeCompare(W.species[b]));
   const series = wanted.map(sp => {
-    const gsp = A.species.indexOf(W.species[sp]);
+    const gsp = A.species.indexOf(W.species[sp].split(' \u00b7 ')[0]);
     return {
-      name: W.species[sp], color: gsp >= 0 ? colorOf(gsp) : cssv('--ink-3'),
+      name: W.species[sp].replace(' \u00b7 ', ' — '),
+      color: gsp >= 0 ? colorOf(gsp) : cssv('--ink-3'),
       values: seasons.map(y => bySp.get(sp).get(y) ?? null)
     };
   });
@@ -3225,9 +3261,17 @@ function renderTrends(years) {
   /* ---------- run-timing shift ---------- */
   if (W) {
     const shiftSeries = [], shiftRows = [];
-    for (const spName of PRIMARY) {
-      const wi = W.species.indexOf(spName);
-      if (wi < 0) continue;
+    /* prefer the run type over the combined species: a shift in "steelhead" is
+       meaningless when summer and winter fish move in opposite directions */
+    const timingUnits = W.species
+      .map((n, i) => [n, i])
+      .filter(([n]) => {
+        const g = n.split(' \u00b7 ')[0];
+        if (!PRIMARY.includes(g)) return false;
+        return n.includes('\u00b7')
+          || !W.species.some(m => m.startsWith(g + ' \u00b7'));
+      });
+    for (const [spName, wi] of timingUnits) {
       const pts = W.series.filter(s => s.sp === wi && s.done && s.from_start
                                    && s.season >= state.from && s.season <= state.to)
         /* day of year of the median fish. Week-since-first-report is not comparable
@@ -3236,16 +3280,18 @@ function renderTrends(years) {
         .map(s => (s.med_off != null ? [s.season, s.med_off] : null))
         .filter(Boolean).sort((a, b) => a[0] - b[0]);
       if (pts.length < 6) continue;
-      const gsp = A.species.indexOf(spName);
+      const gsp = A.species.indexOf(spName.split(' \u00b7 ')[0]);
       const fit = ordinaryLeastSquares(pts.map(p => p[0]), pts.map(p => p[1]));
       const mk = mannKendall(pts.map(p => p[1]));
-      shiftRows.push({ name: spName, n: pts.length, slope: fit.slope,
+      shiftRows.push({ name: spName.replace(' \u00b7 ', ' — '), n: pts.length,
+                       slope: fit.slope,
                        days: fit.slope, p: mk ? mk.p : 1 });
       const yrsAll = [...new Set(W.series.filter(s => s.done && s.from_start)
                                   .map(s => s.season))]
         .filter(y => y >= state.from && y <= state.to).sort((a, b) => a - b);
       const map = new Map(pts);
-      shiftSeries.push({ name: spName, color: gsp >= 0 ? colorOf(gsp) : cssv('--ink-3'),
+      shiftSeries.push({ name: spName.replace(' \u00b7 ', ' — '),
+                         color: gsp >= 0 ? colorOf(gsp) : cssv('--ink-3'),
                          xs: yrsAll, values: yrsAll.map(y => map.get(y) ?? null),
                          fit });
     }

@@ -269,8 +269,14 @@ def build_weekly(annual_totals=None):
         except (ValueError, IndexError):
             continue
         seen_files.add(r['source'])
-        grp, _ = norm_species(r['species'])
-        per_report[(grp, d)] += i(r['adult_total'])
+        grp, race = norm_species(r['species'])
+        n = i(r['adult_total'])
+        per_report[(grp, d)] += n
+        # Run timing is only meaningful per run type: summer and winter steelhead are
+        # months apart, so a combined median describes no fish that ever existed.
+        race = norm_race(race)
+        if race not in ('NA', ''):
+            per_report[(f'{grp} · {race}', d)] += n
         rep_meta[d] = True
 
     # The nominal March turnover is fuzzy: an early-March report still carries the
@@ -364,6 +370,9 @@ def build_weekly(annual_totals=None):
         keep = []
         for s in out:
             a = annual_totals.get((sps[s['sp']], s['season']), 0)
+            if '\u00b7' in sps[s['sp']]:
+                keep.append(s)          # no published total to check a run type against
+                continue
             ratio = (s['w'][-1][1] / a) if a >= 1000 else None
             if ratio is not None and not (0.7 <= ratio <= 1.35):
                 dropped.append((sps[s['sp']], s['season'], round(ratio, 2)))
@@ -422,7 +431,8 @@ def build_preliminary(windows, after_year, newest_report, peaks=None):
         return datetime.date(season + 1, SEASON_START_MONTH, 1) < newest_report
 
     # (group, season) -> the report date whose cumulative total was highest
-    wanted = {(g, sn): d for (g, sn), d in peaks.items() if sn > after_year}
+    wanted = {(g, sn): d for (g, sn), d in peaks.items()
+              if sn > after_year and '\u00b7' not in g}
     by_date = collections.defaultdict(set)
     for (g, sn), d in wanted.items():
         by_date[d].add(g)
@@ -479,7 +489,8 @@ def build_fate(peaks, facmap=None):
         return None
     by_date = collections.defaultdict(set)
     for (g, sn), d in peaks.items():
-        by_date[d].add(g)
+        if '\u00b7' not in g:          # groups only; run types would double-count
+            by_date[d].add(g)
 
     alias = (facmap or {}).get('alias', {})
     merged = (facmap or {}).get('merged', {})
