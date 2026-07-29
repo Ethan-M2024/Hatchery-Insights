@@ -10,8 +10,27 @@ FIELDS = ['adult_total','jack_total','eggtake','on_hand_adults','on_hand_jacks',
           'lethal_spawned','live_spawned','live_released','shipped','mortality','surplus']
 
 
+def _is_species_title(lines, i):
+    """True when line *i* is a species heading rather than wrapped row text.
+
+    Each species table is introduced by its name on its own line, immediately above
+    the column header. That heading sits at the same x as the facility column, so
+    without this check it gets appended to the previous row's facility name — which
+    is how "COWLITZ" became "COWLITZ TYPE N COHO".
+    """
+    for j in (i + 1, i + 2):
+        if j >= len(lines):
+            break
+        nxt = ' '.join(w['text'] for w in lines[j])
+        if 'Facility' in nxt and 'Stock' in nxt:
+            return True
+    return False
+
+
 def lines_of(page):
     ws = page.extract_words(use_text_flow=False)
+    for w in ws:
+        w['text'] = split_run_together(w['text'])
     rows = defaultdict(list)
     for w in ws:
         rows[round(w['top'] / 3.0)].append(w)
@@ -27,6 +46,19 @@ def lines_of(page):
         else:
             merged.append(ln)
     return merged
+
+
+_RUN_TOGETHER = re.compile(r'([A-Z]{2,})([A-Z][a-z])')
+
+
+def split_run_together(text):
+    """Separate a facility name from a stock name extracted as one token.
+
+    Long facility names sit flush against the stock column, so pdfplumber sometimes
+    emits "RINGOLD SPRINGS HATCHERYPriest" as a single word. Facility names are upper
+    case and stock names title case, which makes the join point recoverable.
+    """
+    return _RUN_TOGETHER.sub(r'\1 \2', text)
 
 
 def num(t):
@@ -100,7 +132,8 @@ def parse_pdf(path):
                            'comments': ' '.join(w['text'] for w in right).strip()}
                     rec.update(dict(zip(FIELDS, vals)))
                     recs.append(rec)
-                elif recs and txt.strip():
+                elif (recs and txt.strip()
+                      and not _is_species_title(lns, i)):
                     # continuation / wrapped text
                     fac = ' '.join(w['text'] for w in ln if w['x0'] < stock_x)
                     stk = ' '.join(w['text'] for w in ln if w['x0'] >= stock_x and w['x0'] < 630)

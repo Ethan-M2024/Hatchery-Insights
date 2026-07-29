@@ -261,6 +261,69 @@ def check_monotonic():
         ok(f'all {len(d["weekly"]["series"])} run curves are non-decreasing')
 
 
+def check_preliminary():
+    """Preliminary seasons must decompose the weekly totals they were built from.
+
+    These rows do not come from a published report, so nothing external can confirm
+    them. What can be confirmed is internal consistency: the facility rows are a
+    breakdown of one weekly snapshot, so they must add back up to that snapshot's
+    statewide figure. A first attempt at this inflated 2024-25 by 74%; this check is
+    what would have caught it.
+    """
+    print('\n[11] Preliminary seasons vs the weekly totals they came from')
+    d = json.load(open(paths.PAYLOAD))
+    A = d['annual']
+    prelim = A.get('preliminary_seasons') or []
+    if not prelim:
+        ok('no preliminary seasons in this build')
+        return
+    W = d.get('weekly')
+    if not W:
+        warn('preliminary seasons present but no weekly series to check against')
+        return
+    C = {c: i for i, c in enumerate(A['cols'])}
+    got = collections.defaultdict(int)
+    for r in A['rows']:
+        if r[C['year']] in prelim:
+            got[(A['species'][r[C['sp']]], r[C['year']])] += r[C['adults']]
+    expect = {(W['species'][s['sp']], s['season']): s['w'][-1][1]
+              for s in W['series'] if s['season'] in prelim}
+    bad, checked = [], 0
+    for k, want in expect.items():
+        if want < 500:
+            continue
+        checked += 1
+        have = got.get(k, 0)
+        if not (0.9 <= (have / want) <= 1.1):
+            bad.append((k, have, want, round(have / want, 2)))
+    for b in bad[:8]:
+        fail(f'  {b[0][0]} {b[0][1]}: rows sum to {b[1]:,} but the weekly total '
+             f'is {b[2]:,} (x{b[3]})')
+    if bad:
+        fail(f'{len(bad)} of {checked} preliminary species-seasons do not reconcile')
+    else:
+        ok(f'all {checked} preliminary species-seasons reconcile within 10%')
+
+    # and they must be plausible against history, not just internally consistent
+    hist = collections.defaultdict(list)
+    for r in A['rows']:
+        if r[C['year']] not in prelim:
+            hist[A['species'][r[C['sp']]]].append((r[C['year']], r[C['adults']]))
+    for sp in ('Chinook', 'Coho', 'Chum'):
+        per_year = collections.Counter()
+        for y, v in hist.get(sp, []):
+            per_year[y] += v
+        if not per_year:
+            continue
+        peak = max(per_year.values())
+        for y in prelim:
+            v = got.get((sp, y), 0)
+            if v > peak * 1.5:
+                fail(f'  {sp} {y}: {v:,} preliminary is {v / peak:.1f}x the highest '
+                     f'season ever recorded ({peak:,}) — almost certainly wrong')
+    ok('preliminary totals are within a plausible range of the historical record')
+
+
 def check_coverage():
     """Every season on the index page should appear in the data, with no gaps."""
     print('\n[6] Season coverage')
@@ -383,7 +446,8 @@ def run():
     print('VALIDATION')
     print('=' * 68)
     for fn in (check_reconciliation, check_regions, check_source_quirks,
-               check_weekly_against_annual, check_monotonic, check_coverage,
+               check_weekly_against_annual, check_monotonic, check_preliminary,
+               check_coverage,
                check_values, check_geo, check_manifest, check_freshness):
         try:
             fn()

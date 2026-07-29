@@ -26,6 +26,7 @@ WEEKLY_CACHE = os.path.join(CACHE, 'weekly_parse_cache.json.gz')
 TEMPLATE = os.path.join(SRC, 'template.html')
 DASHBOARD = os.path.join(DOCS, 'index.html')
 RUN_LOG = os.path.join(CACHE, 'last_run.log')
+BUILD_INFO = os.path.join(DATA, 'build_info.json')
 
 
 def ensure_dirs():

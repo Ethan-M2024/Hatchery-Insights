@@ -179,6 +179,21 @@
 "elev_ft": 1867,
 "match": "exact"
 },
+"COLUMBIA BASIN": {
+"lat": 47.186232,
+"lon": -119.252673,
+"gis_name": "Columbia Basin Hatchery",
+"type": "Hatchery",
+"owner_class": "WDFW",
+"operator": "WDFW",
+"county": "Grant",
+"wria": 41,
+"waterbody": "Crab Creek",
+"system": "Crab Creek",
+"active": "Yes",
+"elev_ft": 1104,
+"match": "exact"
+},
 "COLVILLE": {
 "lat": 48.54747,
 "lon": -117.896775,
@@ -222,6 +237,21 @@
 "system": "Case Inlet/North Bay",
 "active": "Yes",
 "elev_ft": 8,
+"match": "exact"
+},
+"COWLITZ": {
+"lat": 46.511337,
+"lon": -122.629388,
+"gis_name": "Cowlitz Salmon Hatchery",
+"type": "Hatchery",
+"owner_class": "WDFW",
+"operator": "WDFW",
+"county": "Lewis",
+"wria": 26,
+"waterbody": "Cowlitz River",
+"system": "Cowlitz River",
+"active": "Yes",
+"elev_ft": 249,
 "match": "exact"
 },
 "COWLITZ TROUT": {
@@ -434,6 +464,21 @@
 "elev_ft": 4,
 "match": "alias"
 },
+"GARRISON": {
+"lat": 47.181128,
+"lon": -122.573162,
+"gis_name": "Garrison Springs Hatchery",
+"type": "Hatchery",
+"owner_class": "WDFW",
+"operator": "WDFW",
+"county": "Pierce",
+"wria": 12,
+"waterbody": "Unnamed stream",
+"system": "Chambers Creek",
+"active": "Yes",
+"elev_ft": 100,
+"match": "exact"
+},
 "GARRISON SPRING": {
 "lat": 47.181128,
 "lon": -122.573162,
@@ -508,6 +553,21 @@
 "active": "No",
 "elev_ft": 92,
 "match": "alias"
+},
+"GRAYS R WEIR": {
+"lat": 46.387361,
+"lon": -123.560479,
+"gis_name": "Grays River Hatchery",
+"type": "Hatchery",
+"owner_class": "WDFW",
+"operator": "WDFW",
+"county": "Pacific",
+"wria": 25,
+"waterbody": "West Fork Grays River",
+"system": "Grays River",
+"active": "No",
+"elev_ft": 92,
+"match": "token"
 },
 "HOODSPORT": {
 "lat": 47.407034,
@@ -824,6 +884,21 @@
 "elev_ft": 40,
 "match": "exact"
 },
+"MERWIN": {
+"lat": 45.954945,
+"lon": -122.56475,
+"gis_name": "Merwin Hatchery",
+"type": "Hatchery",
+"owner_class": "WDFW",
+"operator": "WDFW",
+"county": "Cowlitz",
+"wria": 27,
+"waterbody": "Lewis River",
+"system": "Lewis River",
+"active": "Yes",
+"elev_ft": 236,
+"match": "exact"
+},
 "MERWIN DAM": {
 "lat": 45.957097,
 "lon": -122.55618,
@@ -1094,6 +1169,21 @@
 "elev_ft": 320,
 "match": "exact"
 },
+"RINGOLD SPRING": {
+"lat": 46.513253,
+"lon": -119.258887,
+"gis_name": "Ringold Springs Rearing Facility",
+"type": "Hatchery",
+"owner_class": "WDFW",
+"operator": "WDFW",
+"county": "Franklin",
+"wria": 36,
+"waterbody": "Columbia River",
+"system": "Columbia River",
+"active": "Yes",
+"elev_ft": 387,
+"match": "exact"
+},
 "RINGOLD SPRING HATC": {
 "lat": 46.513253,
 "lon": -119.258887,
@@ -1152,6 +1242,21 @@
 "system": "Washougal River",
 "active": "Yes",
 "elev_ft": 459,
+"match": "exact"
+},
+"SKOOKUMCHUCK": {
+"lat": 46.790056,
+"lon": -122.725544,
+"gis_name": "Skookumchuck Hatchery",
+"type": "Hatchery",
+"owner_class": "WDFW",
+"operator": "WDFW",
+"county": "Thurston",
+"wria": 23,
+"waterbody": "Skookumchuck River",
+"system": "Chehalis River",
+"active": "Yes",
+"elev_ft": 359,
 "match": "exact"
 },
 "SKOOKUMCHUCK DAM": {
@@ -1334,6 +1439,21 @@
 "elev_ft": 89,
 "match": "alias"
 },
+"TWISP ACCLIMATION": {
+"lat": 48.367273,
+"lon": -120.138784,
+"gis_name": "Twisp Screw Trap",
+"type": "Trap - Juvenile",
+"owner_class": "Unknown",
+"operator": "WDFW",
+"county": "Okanogan",
+"wria": 48,
+"waterbody": "Twisp River",
+"system": "unk-add2LU",
+"active": "Yes",
+"elev_ft": 1623,
+"match": "exact"
+},
 "TWISP ACCLIMATION PD": {
 "lat": 48.365752,
 "lon": -120.134907,
@@ -1394,6 +1514,21 @@
 "elev_ft": 603,
 "match": "exact"
 },
+"WASHOUGAL R": {
+"lat": 45.651841,
+"lon": -122.166096,
+"gis_name": "Washougal Hatchery",
+"type": "Hatchery",
+"owner_class": "WDFW",
+"operator": "WDFW",
+"county": "Skamania",
+"wria": 28,
+"waterbody": "Washougal River",
+"system": "Washougal River",
+"active": "Yes",
+"elev_ft": 603,
+"match": "token"
+},
 "WASHOUGAL R FISH WEIR": {
 "lat": 45.65414,
 "lon": -122.170705,
@@ -1408,6 +1543,21 @@
 "active": "Yes",
 "elev_ft": 603,
 "match": "alias"
+},
+"WASHOUGAL R WEIR": {
+"lat": 45.651841,
+"lon": -122.166096,
+"gis_name": "Washougal Hatchery",
+"type": "Hatchery",
+"owner_class": "WDFW",
+"operator": "WDFW",
+"county": "Skamania",
+"wria": 28,
+"waterbody": "Washougal River",
+"system": "Washougal River",
+"active": "Yes",
+"elev_ft": 603,
+"match": "token"
 },
 "WELLS": {
 "lat": 47.94691,

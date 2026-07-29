@@ -65,6 +65,50 @@ Python 3.9+ on Windows, macOS or Linux. The only direct dependency is
 `pdfplumber`; the lock file pins its whole tree by hash.
 </details>
 
+### How long anything actually takes
+
+| What you're doing | How long |
+|---|---|
+| Open the dashboard | **instant** — no Python, no internet, no setup |
+| Pull in this week's new reports | **~13 seconds** |
+| First run ever (builds a Python environment) | ~1 minute, once |
+| Re-read all ~700 PDFs from scratch | ~35 minutes — **and you never need to** |
+
+That last row is the only slow path, and it exists for one reason: if the *parsing
+code* changes, every already-extracted row is stale. Three things mean it never lands
+on you:
+
+- The repository ships the extracted rows, so nothing is re-read that has not changed.
+- The pipeline fingerprints the parser. It re-reads a PDF only when the code that
+  reads PDFs actually changed — not when a chart, a label, or the page changed.
+- When a parser change *is* pushed, a GitHub Action does the 35 minutes on GitHub's
+  machines and commits the result. Your next update just picks it up.
+
+## Getting the data without cloning anything
+
+Every file is served straight from the repository, so scripts and notebooks can read
+it directly — no clone, no build, no key:
+
+```python
+import pandas as pd
+BASE = "https://raw.githubusercontent.com/Ethan-M2024/wdfw-hatchery-escapement/main/data/"
+
+rows   = pd.read_csv(BASE + "annual_raw.csv.gz")   # every facility × season record
+weekly = pd.read_csv(BASE + "raw.csv.gz")          # every weekly in-season snapshot
+```
+
+| File | What it is |
+|---|---|
+| `data/annual_raw.csv.gz` | facility × stock × species × season, as published |
+| `data/raw.csv.gz` | every row of every weekly in-season report |
+| `data/dashboard_data.json` | the compact payload the dashboard itself reads |
+| `data/facility_geo.json` | hatchery coordinates, county, WRIA, waterbody |
+| `data/manifest.json` | URL, SHA-256 and fetch time of every source PDF |
+| `data/build_info.json` | which parser version produced the rows |
+
+These are refreshed by the weekly Action, so they stay current whether or not anyone
+runs anything locally.
+
 ---
 
 ## What's in the dashboard
@@ -76,6 +120,8 @@ Python 3.9+ on Windows, macOS or Linux. The only direct dependency is
 | **Facilities** | The busiest racks, per-facility history, and a picker to compare up to six hatcheries side by side |
 | **Run timing** | Cumulative arrival curves by week — when the fish actually show up, and how each season compares |
 | **Egg take** | Egg take against the Future Brood Document goal, and the programmes furthest below it |
+| **At the rack** | What became of every fish — spawned, passed upstream, surplussed, or dead before spawning — plus pre-spawn mortality, eggs per spawner, and wild-origin share |
+| **Trends** | Mann-Kendall trend tests with Sen's slope, each season against its trailing ten-season mean, run-timing shift, and a jack-based forecast |
 | **Map** | Every hatchery placed on Washington, sized by return and coloured by its largest run, plus a watershed (WRIA) rollup |
 | **Data** | All rows, sortable and searchable, with exports |
 
@@ -153,6 +199,27 @@ WDFW's reports, not of this extraction:
   to mark a season boundary. The build drops any weekly season whose total diverges
   more than 35% from the annual final rather than draw a curve that is not one
   season's run, and reports what it dropped.
+
+### Analytical notes
+
+- **Pre-spawn mortality** is deaths before spawning over fish trapped, from the weekly
+  reports. Sockeye run near 24% statewide — a thermal-stress signature — against 4% for
+  coho. Rates on fewer than 2,000 fish are excluded from the ranking; a rate on a small
+  denominator is noise.
+- **Trend tests** use Mann-Kendall, which is rank-based and so assumes neither a
+  straight line nor normal errors. Sen's slope gives the magnitude. Results are banded
+  honestly: p<0.01, p<0.05, and p<0.10 shown as *weak* rather than dressed up as
+  significant.
+- **Run-timing shift** measures the date by which half a season's fish had arrived,
+  anchored to 1 March so runs crossing the new year stay comparable — calendar
+  day-of-year would read 20 Dec → 5 Jan as a 349-day swing. Seasons not observed from
+  the start of the run are excluded, which is why the 2012–13 fragment does not appear.
+  This is arrival at a trap, so it reflects when the rack was operated as well as when
+  the fish moved.
+- **Jack forecasting** is only offered where it beats the naive alternative of carrying
+  this season forward. On the current record that is coho (r=0.64 vs 0.46) and sockeye
+  (0.53 vs 0.00); for Chinook and steelhead persistence is as good, and the table says
+  so rather than hiding it.
 
 ### Reading the numbers
 
