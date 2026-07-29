@@ -44,7 +44,9 @@ def open_text(path, mode='r', **kw):
             # modified to git and the weekly refresh only commits real changes
             raw = gzip.GzipFile(filename=path, mode='wb', compresslevel=9, mtime=0)
         else:
-            raw = gzip.open(path, mode.replace('t', '') + 'b')
+            import safety
+            raw = gzip.GzipFile(filename=path, mode='rb')
+            raw = safety.bounded_reader(raw)   # refuse a decompression bomb
         return io.TextIOWrapper(raw, encoding=kw['encoding'],
                                 newline=kw.get('newline', ''))
     if 'newline' not in kw:

@@ -201,6 +201,21 @@ posted that week, re-runs the audit and commits the result. If the audit fails,
 nothing is committed and the run is marked red. You can also trigger it by hand from
 the **Actions** tab.
 
+## Security
+
+This project downloads files from the internet and runs them through a PDF parser, so
+it was audited as if the source site were hostile. Ten issues were found and fixed —
+including a path-traversal flaw that would have let a tampered WDFW page write to
+`~/.ssh/authorized_keys`. Downloads are now restricted to an HTTPS host allow-list
+with redirect checking and a size ceiling, filenames are reduced to characters that
+cannot escape a folder, dependencies are pinned by SHA-256, and the page ships a
+strict Content-Security-Policy.
+
+Full write-up, including residual risks: **[SECURITY.md](SECURITY.md)**.
+
+The dashboard makes **no network requests**, stores **nothing** in your browser, and
+generates every export locally. Nothing is uploaded anywhere.
+
 ## Source and licence
 
 Data: [WDFW Hatchery Escapement Reports](https://wdfw.wa.gov/fishing/management/hatcheries/escapement)

@@ -17,7 +17,9 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import paths
+import safety
 from paths import open_text
+from safety import SecurityError
 
 INDEX = 'https://wdfw.wa.gov/fishing/management/hatcheries/escapement'
 ORIGIN = 'https://wdfw.wa.gov'
@@ -33,16 +35,16 @@ def say(msg, tag='  '):
 
 
 def get(url, timeout=90):
-    req = urllib.request.Request(url, headers={'User-Agent': UA})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+    """Host-restricted, HTTPS-only, size-capped fetch. See src/safety.py."""
+    return safety.fetch(url, timeout=timeout, user_agent=UA)
 
 
 # ---------------------------------------------------------------- discovery
 def discover():
     html = get(INDEX).decode('utf-8', 'replace')
     weekly = sorted({m for m in re.findall(
-        r'href="(/sites/default/files/[^"]+?\.pdf)"', html, re.I)})
+        r'href="(/sites/default/files/[^"\s]+?\.pdf)"', html, re.I)
+        if '..' not in urllib.parse.unquote(m)})
     pubs = {}
     for m in re.finditer(r'href="/publications/(\d+)"[^>]*>(.*?)</a>', html, re.S):
         label = re.sub(r'<[^>]+>', '', m.group(2)).replace('&nbsp;', ' ').strip()
@@ -66,26 +68,37 @@ def is_escapement_report(path):
 
 
 def annual_pdf_urls(pub):
+    if not re.fullmatch(r'\d{1,8}', pub):        # publication ids are numeric only
+        return
     for suffix in ('', '_0', '_1', '_2'):
         url = f'{ORIGIN}/sites/default/files/publications/{pub}/wdfw{pub}{suffix}.pdf'
-        try:
-            req = urllib.request.Request(url, headers={'User-Agent': UA})
-            req.get_method = lambda: 'HEAD'
-            with urllib.request.urlopen(req, timeout=45) as r:
-                if r.status == 200:
-                    yield url
-        except Exception:
-            continue
+        if safety.head_ok(url, user_agent=UA):
+            yield url
 
 
 def weekly_filename(path):
-    return urllib.parse.unquote(
-        path.replace('/sites/default/files/', '').replace('/', '__'))
+    """Map a report URL path to a flat local filename.
+
+    The link text comes from a page we do not control, so it is reduced to a plain
+    unreserved-character name; it can never contain a separator or traversal.
+    """
+    trimmed = path.replace('/sites/default/files/', '').strip('/')
+    return safety.safe_filename(trimmed.replace('/', '__'))
 
 
 def download(url, dest, manifest, key):
+    # prove the destination is inside the folder we intend to write to, whatever
+    # the remote page called the file
+    try:
+        dest = safety.resolve_within(os.path.dirname(dest), os.path.basename(dest))
+    except SecurityError as e:
+        say(f'blocked unsafe download path: {e}', '!!')
+        return False
     try:
         blob = get(url)
+    except SecurityError as e:
+        say(f'blocked: {e}', '!!')
+        return False
     except Exception as e:
         say(f'could not fetch {url}: {e}', '!!')
         return False

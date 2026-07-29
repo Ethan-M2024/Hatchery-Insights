@@ -1,3 +1,5 @@
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
 <title>WDFW Hatchery Escapement, 1998–2025</title>
 
 <style>
@@ -1947,7 +1949,10 @@ function zipSync(files) {
 const xmlEsc = s => String(s == null ? '' : s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;').replace(/'/g, '&apos;')
-  .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  /* strip control characters XML forbids outright, and lone surrogates, which
+     make Excel and Word declare the file corrupt */
+  .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+  .replace(/[\uD800-\uDFFF]/g, '');
 
 function colRef(n) {           // 0 -> A, 26 -> AA
   let s = '';
@@ -2492,23 +2497,27 @@ function exportKML() {
   const maxA = Math.max(1, ...feats.map(f => f.props.adults_total));
   const styles = [0, 1, 2, 3, 4].map(i =>
     `<Style id="s${i}"><IconStyle><scale>${(0.5 + i * 0.28).toFixed(2)}</scale><color>ff${
-      ['d6782a', '3468eb', '7aaf1b', '00a1ed', '4881e8'][i]}</color><Icon><href>http://maps.google.com/mapfiles/kml/shapes/placemark_circle.png</href></Icon></IconStyle><LabelStyle><scale>0.7</scale></LabelStyle></Style>`).join('');
+      ['d6782a', '3468eb', '7aaf1b', '00a1ed', '4881e8'][i]}</color></IconStyle><LabelStyle><scale>0.7</scale></LabelStyle></Style>`).join('');
   const marks = feats.map(f => {
     const p = f.props;
     const bucket = Math.min(4, Math.floor(Math.sqrt(p.adults_total / maxA) * 5));
+    /* Entity-escaped, not CDATA: a value containing "]]>" would close a CDATA
+       section early and inject live KML. Escaping twice is safe, CDATA is not. */
     const desc = Object.entries(p).map(([k, v]) =>
       `<tr><td><b>${xmlEsc(k.replace(/_/g, ' '))}</b></td><td>${
         xmlEsc(typeof v === 'number' ? v.toLocaleString('en-US') : v)}</td></tr>`).join('');
     return `<Placemark><name>${xmlEsc(p.facility)}</name><styleUrl>#s${bucket}</styleUrl>` +
-      `<description><![CDATA[<table>${desc}</table>]]></description>` +
+      `<description>${xmlEsc('<table>' + desc + '</table>')}</description>` +
       `<ExtendedData>${Object.entries(p).map(([k, v]) =>
         `<Data name="${xmlEsc(k)}"><value>${xmlEsc(v)}</value></Data>`).join('')}</ExtendedData>` +
       `<Point><coordinates>${f.lon},${f.lat},0</coordinates></Point></Placemark>`;
   }).join('');
   const kml = `<?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2"><Document><name>WDFW hatchery escapement ${
-    xmlEsc(s.range)}</name><description><![CDATA[Species: ${xmlEsc(s.sp)}. Region: ${
-    xmlEsc(s.reg)}. Origin: ${xmlEsc(s.bo)}.<br/>Source: WDFW Hatchery Escapement Reports. Coordinates: WDFW HatcheryLikeFacilities GIS layer.]]></description>${styles}${marks}</Document></kml>`;
+    xmlEsc(s.range)}</name><description>${
+    xmlEsc(`Species: ${s.sp}. Region: ${s.reg}. Origin: ${s.bo}. `
+         + 'Source: WDFW Hatchery Escapement Reports. '
+         + 'Coordinates: WDFW HatcheryLikeFacilities GIS layer.')}</description>${styles}${marks}</Document></kml>`;
   saveBlob(new Blob([kml], { type: 'application/vnd.google-earth.kml+xml' }),
            fileStem() + '.kml');
 }
@@ -2592,9 +2601,16 @@ if (W) $('wk-count').textContent = fmt(W.n_reports);
     (m.latest_report ? ` · current through the weekly report of ${m.latest_report}` : '') +
     (m.latest_fetch ? ` · sources last checked ${m.latest_fetch.slice(0, 10)}` : '') +
     '. '));
-  if (m.repo) {
+  const safeHttps = u => {
+    /* the payload is data, not code: only ever hand https: to href, so a tampered
+       file cannot smuggle in javascript: or data: */
+    try { return new URL(u, location.href).protocol === 'https:' ? u : null; }
+    catch (e) { return null; }
+  };
+  const repo = safeHttps(m.repo);
+  if (repo) {
     const a = document.createElement('a');
-    a.href = m.repo; a.target = '_blank'; a.rel = 'noopener';
+    a.href = repo; a.target = '_blank'; a.rel = 'noopener noreferrer';
     a.textContent = 'Source code and update instructions';
     el.appendChild(a);
     el.appendChild(document.createTextNode('.'));

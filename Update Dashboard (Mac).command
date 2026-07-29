@@ -31,8 +31,15 @@ fi
 # shellcheck disable=SC1091
 source .venv/bin/activate
 python -m pip install --quiet --upgrade pip >/dev/null 2>&1
-python -m pip install --quiet -r requirements.txt || {
-  echo "  Could not install the requirements."; read -n 1 -s -r -p "  Press any key."; exit 1; }
+# Install from the hash-locked list: pip verifies the SHA-256 of every package and
+# refuses anything that does not match, so a tampered release cannot get in.
+if ! python -m pip install --quiet --require-hashes -r requirements.lock.txt; then
+  echo
+  echo "  Could not install the verified dependencies."
+  echo "  If this persists, check your internet connection. Do NOT bypass the"
+  echo "  hash check - it is what protects you from a tampered package."
+  read -n 1 -s -r -p "  Press any key."; exit 1
+fi
 
 python src/pipeline.py "$@"
 STATUS=$?
