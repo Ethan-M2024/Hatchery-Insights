@@ -115,6 +115,35 @@ def download(url, dest, manifest, key):
 
 
 # ---------------------------------------------------------------- parse cache
+def parser_fingerprint(module_file):
+    """SHA-256 of a parser's source.
+
+    The shipped rows were produced by a particular version of the parsing code. If
+    that code changes, those rows are stale no matter how fresh the PDFs are — and
+    if it has not changed, there is never a reason to read a PDF twice. Recording
+    the fingerprint is what lets a run tell those two cases apart instead of making
+    someone remember to pass --full.
+    """
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), module_file)
+    return hashlib.sha256(open(path, 'rb').read()).hexdigest()[:16]
+
+
+def build_info():
+    if os.path.exists(paths.BUILD_INFO):
+        try:
+            return json.load(open(paths.BUILD_INFO))
+        except Exception:
+            pass
+    return {}
+
+
+def save_build_info(**kw):
+    info = build_info()
+    info.update(kw)
+    json.dump(info, open(paths.BUILD_INFO, 'w'), indent=1, sort_keys=True)
+
+
+
 def load_cache(full=False):
     """Rows already extracted, keyed by source filename.
 
@@ -185,6 +214,9 @@ def fetch(cache, full=False):
         dest = os.path.join(paths.ANNUAL_DIR, f'{season}_{pub}.pdf')
         key = 'a:' + os.path.basename(dest)
         entry = manifest.get(key, {})
+        if (not full and entry.get('verified') and os.path.exists(paths.RAW_ANNUAL)
+                and os.path.exists(dest)):
+            continue
         if not full and entry.get('verified') and os.path.exists(paths.RAW_ANNUAL):
             continue
         if not full and os.path.exists(dest) and is_escapement_report(dest):
@@ -223,7 +255,7 @@ def parse_weekly(cache, manifest, full=False):
     if todo:
         say(f'reading {len(todo)} PDF(s)')
         shas = {n: s for n, _, s in todo}
-        with mp.Pool(min(6, os.cpu_count() or 4), maxtasksperchild=25) as pool:
+        with mp.Pool(max(2, os.cpu_count() or 4), maxtasksperchild=25) as pool:
             for n, (name, rows) in enumerate(
                     pool.imap_unordered(_weekly_job, [t[1] for t in todo],
                                         chunksize=1), 1):
@@ -255,7 +287,7 @@ def parse_annual():
         say('annual PDFs are not held locally; reusing the extracted rows')
         return
     args = [(os.path.join(paths.ANNUAL_DIR, f), f.split('_')[0]) for f in files]
-    with mp.Pool(min(6, os.cpu_count() or 4)) as pool:
+    with mp.Pool(max(2, os.cpu_count() or 4)) as pool:
         res = pool.map(pa.job, args)
     rows = [x for r in res for x in r if '__err__' not in x]
     for e in [x['__err__'] for r in res for x in r if '__err__' in x]:
@@ -294,16 +326,32 @@ def main(argv=None):
     cache, origin = load_cache(full=a.full)
     say(f'already extracted: {len(cache)} weekly reports ({origin})')
 
-    manifest, new_annual = fetch(cache, full=a.full)
+    info = build_info()
+    wk_fp, an_fp = parser_fingerprint('parse.py'), parser_fingerprint('parse_annual.py')
+    weekly_stale = info.get('weekly_parser') not in (None, wk_fp)
+    annual_stale = info.get('annual_parser') not in (None, an_fp)
+    if weekly_stale:
+        say('the weekly parser changed since these rows were extracted — '
+            're-reading every weekly report')
+        cache = {}
+    if annual_stale:
+        say('the annual parser changed since these rows were extracted — '
+            're-reading every annual report')
+
+    manifest, new_annual = fetch(cache, full=a.full or annual_stale)
     parse_weekly(cache, manifest, full=a.full)
-    if new_annual or a.full or not os.path.exists(paths.RAW_ANNUAL):
+    if new_annual or a.full or annual_stale or not os.path.exists(paths.RAW_ANNUAL):
         parse_annual()
     else:
         say('annual: unchanged, reusing the extracted rows')
+    save_build_info(weekly_parser=wk_fp, annual_parser=an_fp)
 
     if not a.no_geo:
         import geo, build_data
-        facs = build_data.facility_names()
+        # include facilities that only appear in the weekly reports, so preliminary
+        # seasons are mapped as well as the published ones
+        facs = sorted(set(build_data.facility_names())
+                      | set(build_data.weekly_facility_names()))
         mapping, unmatched = geo.build(facs)
         json.dump(mapping, open(paths.FACILITY_GEO, 'w'), indent=0)
         say(f'locations: {len(mapping)}/{len(facs)} hatcheries mapped'

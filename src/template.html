@@ -88,6 +88,15 @@ h1 {
   line-height: 1.45;
 }
 .standfirst a { color: var(--accent); text-underline-offset: 3px; }
+.currency { font-size: 14px; color: var(--ink-3); margin-top: 8px; }
+.currency b { color: var(--ink-2); font-weight: 600; }
+.tag-prelim {
+  display: inline-block; font-family: var(--mono); font-size: 10px;
+  letter-spacing: .08em; text-transform: uppercase; vertical-align: 1px;
+  border: 1px solid var(--axis); border-radius: 4px; padding: 1px 5px;
+  color: var(--ink-2); margin-left: 6px;
+}
+.serie.prelim { stroke-dasharray: 5 3.5; }
 
 /* ---------- hero band ---------- */
 .hero {
@@ -358,15 +367,16 @@ code { font-family: var(--mono); font-size: .92em; }
 <header class="top">
   <p class="eyebrow">Washington Dept. of Fish &amp; Wildlife · Adult Report Database</p>
   <p class="standfirst">
-    Every fish counted back to a WDFW hatchery rack or trap, 1998–99 through 2024–25,
-    extracted from the 27 annual <em>Final Hatchery Escapement Reports</em> and
-    <span id="wk-count">the</span> weekly in-season reports.
+    Every fish counted back to a WDFW hatchery rack or trap, 1998–99 through the
+    present, from the annual <em>Final Hatchery Escapement Reports</em> and the
+    weekly in-season reports.
     <a href="https://wdfw.wa.gov/fishing/management/hatcheries/escapement" target="_blank" rel="noopener">Source&nbsp;↗</a>
   </p>
+  <p class="standfirst currency" id="currency"></p>
 
   <div class="hero">
     <div class="hero-figure">
-      <div class="label">2024–25 adults trapped</div>
+      <div class="label" id="hero-label">adults trapped</div>
       <div class="value" id="hero-val">—</div>
       <div class="sub" id="hero-sub">—</div>
     </div>
@@ -406,6 +416,8 @@ code { font-family: var(--mono); font-size: .92em; }
   <button class="tab" role="tab" id="tab-facility"  aria-controls="panel-facility"  aria-selected="false">Facilities</button>
   <button class="tab" role="tab" id="tab-timing"    aria-controls="panel-timing"    aria-selected="false">Run timing</button>
   <button class="tab" role="tab" id="tab-eggs"      aria-controls="panel-eggs"      aria-selected="false">Egg take</button>
+  <button class="tab" role="tab" id="tab-fate"      aria-controls="panel-fate"      aria-selected="false">At the rack</button>
+  <button class="tab" role="tab" id="tab-trends"    aria-controls="panel-trends"    aria-selected="false">Trends</button>
   <button class="tab" role="tab" id="tab-map"       aria-controls="panel-map"       aria-selected="false">Map</button>
   <button class="tab" role="tab" id="tab-data"      aria-controls="panel-data"      aria-selected="false">Data</button>
 </nav>
@@ -614,6 +626,133 @@ code { font-family: var(--mono); font-size: .92em; }
 </section>
 
 
+
+<!-- ============ AT THE RACK ============ -->
+<section id="panel-fate" role="tabpanel" aria-labelledby="tab-fate" class="grid hidden">
+  <div class="card"><div class="tiles" id="fate-tiles"></div></div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>What became of the fish</h2>
+        <p class="note" id="fate-note">Every fish handled at a rack ends up somewhere: spawned for the next generation, passed above the rack to spawn naturally, surplussed, or dead before it could spawn.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-fate">Table</button>
+    </div>
+    <svg class="plot" id="c-fate" height="320"></svg>
+    <div class="legend" id="l-fate"></div>
+    <div class="tbl-wrap hidden" id="t-fate"></div>
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Pre-spawn mortality</h2>
+          <p class="note">Share of trapped fish that died before spawning. Sustained high rates point to thermal stress, disease or handling.</p>
+        </div>
+        <button class="tbl-toggle" data-table="t-psm">Table</button>
+      </div>
+      <svg class="plot" id="c-psm" height="300"></svg>
+      <div class="legend" id="l-psm"></div>
+      <div class="tbl-wrap hidden" id="t-psm"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>Eggs per spawner</h2>
+          <p class="note">Egg take divided by fish spawned — a proxy for fecundity, and so for body size and age structure.</p>
+        </div>
+        <button class="tbl-toggle" data-table="t-eps">Table</button>
+      </div>
+      <svg class="plot" id="c-eps" height="300"></svg>
+      <div class="legend" id="l-eps"></div>
+      <div class="tbl-wrap hidden" id="t-eps"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Racks with the highest pre-spawn mortality</h2>
+        <p class="note" id="psm-rank-note">Ranked over the selected seasons. Only racks handling enough fish for the rate to mean anything.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-psmrank">Table</button>
+    </div>
+    <div class="tbl-wrap" id="t-psmrank"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Origin of the fish handled</h2>
+        <p class="note">Wild-origin share of fish at the rack. Read the long-run rise with care — recording practice changed as well as the fish.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-origin">Table</button>
+    </div>
+    <svg class="plot" id="c-origin" height="300"></svg>
+    <div class="legend" id="l-origin"></div>
+    <div class="tbl-wrap hidden" id="t-origin"></div>
+  </div>
+</section>
+
+<!-- ============ TRENDS ============ -->
+<section id="panel-trends" role="tabpanel" aria-labelledby="tab-trends" class="grid hidden">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Is the trend real?</h2>
+        <p class="note">Mann-Kendall is a rank-based test, so it does not assume a straight line or normal errors — appropriate for run data. Sen's slope estimates the size of the change.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-mk">Table</button>
+    </div>
+    <div class="tbl-wrap" id="t-mk"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Against the recent normal</h2>
+        <p class="note" id="anom-note">Each season as a percentage difference from the preceding ten-season mean — the framing used to judge whether a run is unusual.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="anom-species"></select>
+        <button class="tbl-toggle" data-table="t-anom">Table</button>
+      </div>
+    </div>
+    <svg class="plot" id="c-anom" height="320"></svg>
+    <div class="legend" id="l-anom"></div>
+    <div class="tbl-wrap hidden" id="t-anom"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Are the runs shifting earlier or later?</h2>
+        <p class="note">The date by which half the season's fish had arrived, with a fitted trend. Measured from 1 March so runs crossing the new year stay comparable.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-shift">Table</button>
+    </div>
+    <svg class="plot" id="c-shift" height="320"></svg>
+    <div class="legend" id="l-shift"></div>
+    <div class="tbl-wrap hidden" id="t-shift"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Forecasting next season from jacks</h2>
+        <p class="note" id="fc-note">Jacks return a year early, so their number is a leading indicator of the adult run behind them.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-fc">Table</button>
+    </div>
+    <svg class="plot" id="c-fc" height="330"></svg>
+    <div class="legend" id="l-fc"></div>
+    <div class="tbl-wrap hidden" id="t-fc"></div>
+  </div>
+</section>
+
 <!-- ============ MAP ============ -->
 <section id="panel-map" role="tabpanel" aria-labelledby="tab-map" class="grid hidden">
   <div class="card">
@@ -734,6 +873,12 @@ const SP_ORDER = [...primaryIdx, ...otherIdx];
 const spColorVar = new Map(primaryIdx.map((sp, i) => [sp, SERIES_VARS[i]]));
 const colorOf = sp => spColorVar.has(sp) ? cssv(spColorVar.get(sp)) : cssv('--ink-3');
 
+/* Seasons whose final WDFW report is not published yet, reconstructed from the
+   weekly in-season series. Everything that shows them says so. */
+const PRELIM = new Set(A.preliminary_seasons || []);
+const isPrelim = y => PRELIM.has(y);
+const seasonLabel = y => season(y) + (isPrelim(y) ? ' (preliminary)' : '');
+const firstPrelim = () => PRELIM.size ? Math.min(...PRELIM) : null;
 const YEARS = [...new Set(A.rows.map(r => r[C.year]))].sort((a, b) => a - b);
 const Y0 = YEARS[0], Y1 = YEARS[YEARS.length - 1];
 
@@ -854,6 +999,16 @@ function lineChart(svg, opts) {
     });
     if (!d) continue;
     el('path', { class: 'serie', d, stroke: s.color, 'stroke-opacity': s.dim ? .3 : 1 }, svg);
+    /* the preliminary tail is dashed, so an estimate never reads as a final count */
+    if (opts.prelimFrom != null) {
+      let dp = '', pen = false;
+      s.values.forEach((v, i) => {
+        if (v == null || xs[i] < opts.prelimFrom) { pen = false; return; }
+        dp += (pen ? 'L' : 'M') + X(i) + ' ' + Y(v); pen = true;
+      });
+      if (dp) el('path', { class: 'serie prelim', d: dp, stroke: s.color,
+                           'stroke-opacity': s.dim ? .3 : 1 }, svg);
+    }
     const e = ends.find(x => x.s === s);
     let last = -1;
     s.values.forEach((v, i) => { if (v != null) last = i; });
@@ -1087,6 +1242,9 @@ function renderHero() {
   const vals = YEARS.map(y => byYear.get(y) || 0);
   const last = vals[vals.length - 1], prev = vals[vals.length - 2];
   const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
+  const hl = $('hero-label');
+  if (hl) hl.textContent = `${season(Y1)} adults trapped` +
+    (isPrelim(Y1) ? ' (preliminary)' : '');
   $('hero-val').textContent = fmt(last);
   const pct = ((last - mean) / mean) * 100;
   $('hero-sub').textContent =
@@ -1171,10 +1329,10 @@ function renderTrend(rows, years) {
   })).filter(s => s.values.some(v => v));
   /* end-labels only when few enough series to separate cleanly */
   if (series.length > 4) series.forEach(s => s.label = false);
-  lineChart($('c-trend'), { xs: years, series, xLabel: season });
+  lineChart($('c-trend'), { xs: years, series, xLabel: season, prelimFrom: firstPrelim() });
   renderLegend($('l-trend'), series.map(s => ({ name: s.name, color: s.color })));
   renderTable($('t-trend'),
-    [{ label: 'Season', left: true, get: r => season(r.y) },
+    [{ label: 'Season', left: true, get: r => seasonLabel(r.y) },
      ...series.map(s => ({ label: s.name, get: r => s.values[r.i] == null ? '—' : fmt(s.values[r.i]) })),
      { label: 'Total', get: r => fmt(series.reduce((a, s) => a + (s.values[r.i] || 0), 0)) }],
     years.map((y, i) => ({ y, i })));
@@ -1317,7 +1475,7 @@ function renderRace(rows, years) {
     values: years.map(y => grid.get(ra + ':' + y) ?? null)
   }));
   if (series.length > 4) series.forEach(s => s.label = false);
-  lineChart($('c-race'), { xs: years, series, xLabel: season });
+  lineChart($('c-race'), { xs: years, series, xLabel: season, prelimFrom: firstPrelim() });
   renderLegend($('l-race'), series.map(s => ({ name: s.name, color: s.color })));
   $('c-race').setAttribute('aria-label', `${A.species[sp]} adults by run type and season`);
   renderTable($('t-race'),
@@ -1395,7 +1553,7 @@ function renderFacDetail(rows, years) {
     values: years.map(y => grid.get(sp + ':' + y) ?? null)
   }));
   if (series.length > 4) series.forEach(s => s.label = false);
-  lineChart($('c-fac'), { xs: years, series, xLabel: season });
+  lineChart($('c-fac'), { xs: years, series, xLabel: season, prelimFrom: firstPrelim() });
   renderLegend($('l-fac'), series.map(s => ({ name: s.name, color: s.color })));
   const stocks = [...new Set(sub.map(r => A.stocks[r[C.stock]]).filter(Boolean))];
   $('fac-note').textContent = stocks.length
@@ -1533,7 +1691,8 @@ function renderCompare(rows, years) {
     values: years.map(y => grid.has(f + ':' + y) ? grid.get(f + ':' + y) : null)
   }));
   if (series.length > 4) series.forEach(s => s.label = false);
-  lineChart(svg, { xs: years, series, xLabel: season, valFmt: measure.fmt });
+  lineChart(svg, { xs: years, series, xLabel: season, valFmt: measure.fmt,
+                   prelimFrom: firstPrelim() });
   renderLegend($('l-cmp'), series.map(s => ({ name: s.name, color: s.color })));
 
   const totals = series.map(s => s.values.reduce((a, b) => a + (b || 0), 0));
@@ -1559,6 +1718,12 @@ $('cmp-measure').addEventListener('change', e => {
 });
 
 /* ===================== run timing ===================== */
+/* days after 1 March, rendered as the date it falls on */
+const DOY_LABEL = off => {
+  const d = new Date(Date.UTC(2001, 2, 1));
+  d.setUTCDate(d.getUTCDate() + Math.round(off));
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
+};
 const WEEK_LABEL = w => {
   const d = new Date(Date.UTC(2001, 2, 1 + w * 7));
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -1637,7 +1802,7 @@ function renderMedian() {
   if (!W) return;
   const bySp = new Map();
   for (const s of W.series) {
-    if (!s.done || s.season < state.from || s.season > state.to) continue;
+    if (!s.done || !s.from_start || s.season < state.from || s.season > state.to) continue;
     const end = s.w[s.w.length - 1][1] || 1;
     let med = null;
     for (const [w, v] of s.w) if (med == null && v / end >= .5) med = w;
@@ -1645,7 +1810,8 @@ function renderMedian() {
     if (!bySp.has(s.sp)) bySp.set(s.sp, new Map());
     bySp.get(s.sp).set(s.season, med);
   }
-  const seasons = [...new Set(W.series.filter(s => s.done).map(s => s.season))]
+  const seasons = [...new Set(W.series.filter(s => s.done && s.from_start)
+                               .map(s => s.season))]
     .filter(y => y >= state.from && y <= state.to).sort((a, b) => a - b);
   const wanted = [...bySp.keys()]
     .filter(sp => PRIMARY.includes(W.species[sp]))
@@ -1855,6 +2021,10 @@ function renderAll() {
     renderTiming(); renderMedian();
   } else if (panel === 'panel-eggs') {
     renderEggs(rows, years);
+  } else if (panel === 'panel-fate') {
+    renderFate(years);
+  } else if (panel === 'panel-trends') {
+    renderTrends(years);
   } else if (panel === 'panel-map') {
     renderMap(rows, years); renderWria(rows);
   } else if (panel === 'panel-data') {
@@ -2585,7 +2755,565 @@ function renderExport() {
 
 <script>
 "use strict";
-if (W) $('wk-count').textContent = fmt(W.n_reports);
+/* ===================================================================
+   At the rack — fish disposition, pre-spawn mortality, fecundity
+   =================================================================== */
+const FATE = RAW.fate || null;
+const FC = FATE ? Object.fromEntries(FATE.cols.map((c, i) => [c, i])) : {};
+
+/* the fate table keys species and facilities separately from the annual table */
+const fateSpIdx = new Map((FATE ? FATE.species : []).map((n, i) => [n, i]));
+const fateFacIdx = new Map((FATE ? FATE.facilities : []).map((n, i) => [n, i]));
+
+function fateRows() {
+  if (!FATE) return [];
+  const wantSp = new Set([...state.species].map(i => A.species[i]));
+  const region = state.region === '' ? null : A.regions[+state.region];
+  /* the fate table has no region column; resolve it through the facility name */
+  const facRegion = new Map();
+  for (const r of A.rows) {
+    const n = A.facilities[r[C.fac]];
+    if (!facRegion.has(n)) facRegion.set(n, A.regions[r[C.region]]);
+  }
+  return FATE.rows.filter(r => {
+    if (r[FC.year] < state.from || r[FC.year] > state.to) return false;
+    if (wantSp.size && !wantSp.has(FATE.species[r[FC.sp]])) return false;
+    if (region && facRegion.get(FATE.facilities[r[FC.fac]]) !== region) return false;
+    return true;
+  });
+}
+
+const DISPOSITION = [
+  ['spawned', 'Spawned for brood', '--s1', r => r[FC.lethal_spawned] + r[FC.live_spawned]],
+  ['released', 'Passed above the rack', '--s3', r => r[FC.released]],
+  ['surplus', 'Surplussed', '--s4', r => r[FC.surplus]],
+  ['mortality', 'Died before spawning', '--s2', r => r[FC.mortality]],
+];
+
+function renderFate(years) {
+  if (!FATE) return;
+  const rows = fateRows();
+  const yrs = years.filter(y => rows.some(r => r[FC.year] === y));
+
+  /* ---- headline tiles ---- */
+  const tot = { trapped: 0, jacks: 0, eggs: 0 };
+  const disp = Object.fromEntries(DISPOSITION.map(d => [d[0], 0]));
+  for (const r of rows) {
+    tot.trapped += r[FC.trapped]; tot.jacks += r[FC.jacks]; tot.eggs += r[FC.eggtake];
+    for (const [k, , , get] of DISPOSITION) disp[k] += get(r);
+  }
+  const spawned = disp.spawned;
+  const host = $('fate-tiles'); clear(host);
+  const psm = tot.trapped ? disp.mortality / tot.trapped : 0;
+  const tiles = [
+    ['Fish handled', compact(tot.trapped), `${fmt(tot.trapped)} adults at the rack`],
+    ['Died before spawning', (psm * 100).toFixed(1) + '%',
+     `${fmt(disp.mortality)} fish`, psm > 0.15 ? 'crit' : psm > 0.08 ? 'warn' : 'good'],
+    ['Spawned for brood', compact(spawned),
+     tot.trapped ? `${(spawned / tot.trapped * 100).toFixed(0)}% of those handled` : '—'],
+    ['Passed above the rack', compact(disp.released),
+     tot.trapped ? `${(disp.released / tot.trapped * 100).toFixed(0)}% left to spawn naturally` : '—'],
+    ['Surplussed', compact(disp.surplus),
+     tot.trapped ? `${(disp.surplus / tot.trapped * 100).toFixed(0)}% surplus to brood needs` : '—'],
+    ['Eggs per spawner', spawned ? fmt(Math.round(tot.eggs / spawned)) : '—',
+     `${compact(tot.eggs)} eggs taken`],
+  ];
+  for (const [label, value, sub, sev] of tiles) {
+    const d = document.createElement('div'); d.className = 'tile';
+    const a = document.createElement('div'); a.className = 'label'; a.textContent = label;
+    const b = document.createElement('div'); b.className = 'value'; b.textContent = value;
+    if (sev) b.style.color = cssv(sev === 'crit' ? '--crit' : sev === 'warn' ? '--warn' : '--good');
+    const c = document.createElement('div'); c.className = 'sub'; c.textContent = sub;
+    d.append(a, b, c); host.appendChild(d);
+  }
+
+  /* ---- disposition over time ---- */
+  const keys = DISPOSITION.map(([k, name, v]) => ({ i: k, name, color: cssv(v) }));
+  const matrix = yrs.map(y => DISPOSITION.map(([, , , get]) =>
+    rows.reduce((s, r) => s + (r[FC.year] === y ? get(r) : 0), 0)));
+  stackChart($('c-fate'), { xs: yrs, keys, matrix, xLabel: season, unit: 'fish' });
+  renderLegend($('l-fate'), keys, true);
+  renderTable($('t-fate'),
+    [{ label: 'Season', left: true, get: r => seasonLabel(r.y) },
+     ...DISPOSITION.map(([k, name], ki) => ({ label: name, get: r => fmt(matrix[r.i][ki]) })),
+     { label: 'Total handled', get: r => fmt(matrix[r.i].reduce((a, b) => a + b, 0)) }],
+    yrs.map((y, i) => ({ y, i })));
+
+  /* ---- pre-spawn mortality by species ---- */
+  const sel = SP_ORDER.filter(sp => state.species.has(sp) && fateSpIdx.has(A.species[sp]));
+  const psmSeries = sel.map(sp => {
+    const fi = fateSpIdx.get(A.species[sp]);
+    return {
+      name: A.species[sp], color: colorOf(sp),
+      values: yrs.map(y => {
+        let t = 0, m = 0;
+        for (const r of rows) if (r[FC.year] === y && r[FC.sp] === fi) {
+          t += r[FC.trapped]; m += r[FC.mortality];
+        }
+        return t > 200 ? (m / t) * 100 : null;
+      })
+    };
+  }).filter(s => s.values.some(v => v != null));
+  if (psmSeries.length > 4) psmSeries.forEach(s => s.label = false);
+  lineChart($('c-psm'), { xs: yrs, series: psmSeries, xLabel: season,
+                          yFmt: v => v.toFixed(0) + '%', valFmt: v => v.toFixed(1) + '%' });
+  renderLegend($('l-psm'), psmSeries.map(s => ({ name: s.name, color: s.color })));
+  renderTable($('t-psm'),
+    [{ label: 'Season', left: true, get: r => seasonLabel(r.y) },
+     ...psmSeries.map(s => ({ label: s.name,
+       get: r => s.values[r.i] == null ? '—' : s.values[r.i].toFixed(1) + '%' }))],
+    yrs.map((y, i) => ({ y, i })),
+    { caption: 'Seasons where a species handled fewer than 200 fish are left blank.' });
+
+  /* ---- eggs per spawner ---- */
+  const epsSeries = sel.map(sp => {
+    const fi = fateSpIdx.get(A.species[sp]);
+    return {
+      name: A.species[sp], color: colorOf(sp),
+      values: yrs.map(y => {
+        let e = 0, sp2 = 0;
+        for (const r of rows) if (r[FC.year] === y && r[FC.sp] === fi) {
+          e += r[FC.eggtake]; sp2 += r[FC.lethal_spawned] + r[FC.live_spawned];
+        }
+        return sp2 > 100 ? e / sp2 : null;
+      })
+    };
+  }).filter(s => s.values.some(v => v != null));
+  if (epsSeries.length > 4) epsSeries.forEach(s => s.label = false);
+  lineChart($('c-eps'), { xs: yrs, series: epsSeries, xLabel: season,
+                          yFmt: v => fmt(v), valFmt: v => fmt(Math.round(v)) + ' eggs' });
+  renderLegend($('l-eps'), epsSeries.map(s => ({ name: s.name, color: s.color })));
+  renderTable($('t-eps'),
+    [{ label: 'Season', left: true, get: r => seasonLabel(r.y) },
+     ...epsSeries.map(s => ({ label: s.name,
+       get: r => s.values[r.i] == null ? '—' : fmt(Math.round(s.values[r.i])) }))],
+    yrs.map((y, i) => ({ y, i })));
+
+  /* ---- worst racks ---- */
+  const byFac = new Map();
+  for (const r of rows) {
+    const k = r[FC.fac];
+    const e = byFac.get(k) || { fac: k, t: 0, m: 0, sp: new Map() };
+    e.t += r[FC.trapped]; e.m += r[FC.mortality];
+    e.sp.set(r[FC.sp], (e.sp.get(r[FC.sp]) || 0) + r[FC.trapped]);
+    byFac.set(k, e);
+  }
+  const ranked = [...byFac.values()].filter(e => e.t >= 2000)
+    .map(e => {
+      let top = '', tv = -1;
+      for (const [k, v] of e.sp) if (v > tv) { tv = v; top = FATE.species[k]; }
+      return { ...e, rate: e.m / e.t, top };
+    })
+    .sort((a, b) => b.rate - a.rate).slice(0, 25);
+  $('psm-rank-note').textContent =
+    `Ranked over ${yrs.length} season${yrs.length > 1 ? 's' : ''}. Racks handling ` +
+    `fewer than 2,000 fish in that time are excluded, because a rate on a small ` +
+    `denominator is noise.`;
+  renderTable($('t-psmrank'),
+    [{ label: 'Facility', left: true, get: e => FATE.facilities[e.fac] },
+     { label: 'Mostly', left: true, get: e => e.top },
+     { label: 'Handled', get: e => fmt(e.t) },
+     { label: 'Died', get: e => fmt(e.m) },
+     { label: 'Pre-spawn mortality', get: e => (e.rate * 100).toFixed(1) + '%' },
+     { label: '', get: e => {
+         const d = document.createElement('div'); d.className = 'meter';
+         const i2 = document.createElement('i');
+         i2.style.width = Math.min(100, e.rate * 200) + '%';
+         i2.style.background = e.rate >= .15 ? cssv('--crit')
+                             : e.rate >= .08 ? cssv('--warn') : cssv('--good');
+         d.appendChild(i2); return d; } }],
+    ranked,
+    { caption: 'Bar scaled so 50% mortality fills it. Amber from 8%, red from 15%.' });
+
+  /* ---- wild-origin share, from the annual brood-origin column ---- */
+  const scoped = rowsInScope();
+  const oy = years.filter(y => scoped.some(r => r[C.year] === y));
+  const oSeries = SP_ORDER.filter(sp => state.species.has(sp)).slice(0, 6).map(sp => ({
+    name: A.species[sp], color: colorOf(sp),
+    values: oy.map(y => {
+      let all = 0, wild = 0;
+      for (const r of scoped) if (r[C.year] === y && r[C.sp] === sp) {
+        all += r[C.adults];
+        if (r[C.bo] === 2) wild += r[C.adults];
+      }
+      return all > 200 ? (wild / all) * 100 : null;
+    })
+  })).filter(s => s.values.some(v => v != null));
+  if (oSeries.length > 4) oSeries.forEach(s => s.label = false);
+  lineChart($('c-origin'), { xs: oy, series: oSeries, xLabel: season,
+                             yFmt: v => v.toFixed(0) + '%', valFmt: v => v.toFixed(1) + '%',
+                             prelimFrom: firstPrelim() });
+  renderLegend($('l-origin'), oSeries.map(s => ({ name: s.name, color: s.color })));
+  renderTable($('t-origin'),
+    [{ label: 'Season', left: true, get: r => seasonLabel(r.y) },
+     ...oSeries.map(s => ({ label: s.name,
+       get: r => s.values[r.i] == null ? '—' : s.values[r.i].toFixed(1) + '%' }))],
+    oy.map((y, i) => ({ y, i })));
+}
+</script>
+
+<script>
+"use strict";
+/* ===================================================================
+   Trends — Mann-Kendall, anomaly against the recent normal,
+   run-timing shift, and a jack-based forecast
+   =================================================================== */
+
+/** Mann-Kendall S statistic, variance-corrected for ties, plus a normal-approx p. */
+function mannKendall(v) {
+  const n = v.length;
+  if (n < 8) return null;
+  let S = 0;
+  for (let i = 0; i < n - 1; i++)
+    for (let j = i + 1; j < n; j++) S += Math.sign(v[j] - v[i]);
+  const counts = new Map();
+  for (const x of v) counts.set(x, (counts.get(x) || 0) + 1);
+  let tie = 0;
+  for (const c of counts.values()) if (c > 1) tie += c * (c - 1) * (2 * c + 5);
+  const varS = (n * (n - 1) * (2 * n + 5) - tie) / 18;
+  const z = S > 0 ? (S - 1) / Math.sqrt(varS) : S < 0 ? (S + 1) / Math.sqrt(varS) : 0;
+  /* two-sided p from the normal CDF (Abramowitz & Stegun 7.1.26) */
+  const a = Math.abs(z) / Math.SQRT2;
+  const t = 1 / (1 + 0.3275911 * a);
+  const erf = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t
+                    - 0.284496736) * t + 0.254829592) * t * Math.exp(-a * a);
+  return { S, z, p: 1 - erf, n };
+}
+
+/** Sen's slope: the median of all pairwise slopes — robust to outliers. */
+function senSlope(xs, ys) {
+  const s = [];
+  for (let i = 0; i < ys.length - 1; i++)
+    for (let j = i + 1; j < ys.length; j++)
+      if (xs[j] !== xs[i]) s.push((ys[j] - ys[i]) / (xs[j] - xs[i]));
+  if (!s.length) return 0;
+  s.sort((a, b) => a - b);
+  const m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function ordinaryLeastSquares(xs, ys) {
+  const n = xs.length, mx = xs.reduce((a, b) => a + b, 0) / n,
+        my = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (ys[i] - my); den += (xs[i] - mx) ** 2; }
+  const slope = den ? num / den : 0;
+  return { slope, intercept: my - slope * mx };
+}
+
+function pearson(x, y) {
+  const n = x.length, mx = x.reduce((a, b) => a + b, 0) / n,
+        my = y.reduce((a, b) => a + b, 0) / n;
+  let num = 0, dx = 0, dy = 0;
+  for (let i = 0; i < n; i++) {
+    num += (x[i] - mx) * (y[i] - my); dx += (x[i] - mx) ** 2; dy += (y[i] - my) ** 2;
+  }
+  return dx && dy ? num / Math.sqrt(dx * dy) : 0;
+}
+
+/** Adults per season for one species, final reports only. */
+function speciesSeries(sp, key) {
+  const per = new Map();
+  for (const r of rowsInScope()) {
+    if (r[C.sp] !== sp || isPrelim(r[C.year])) continue;
+    per.set(r[C.year], (per.get(r[C.year]) || 0) + r[C[key || 'adults']]);
+  }
+  const ys = [...per.keys()].sort((a, b) => a - b);
+  return { years: ys, values: ys.map(y => per.get(y)) };
+}
+
+function renderTrends(years) {
+  /* ---------- Mann-Kendall ---------- */
+  const rowsMK = [];
+  for (const sp of SP_ORDER) {
+    if (!state.species.has(sp)) continue;
+    const { years: ys, values } = speciesSeries(sp);
+    const mk = mannKendall(values);
+    if (!mk) continue;
+    const slope = senSlope(ys, values);
+    const mean = values.reduce((a, b) => a + b, 0) / values.length;
+    rowsMK.push({ sp, n: mk.n, z: mk.z, p: mk.p, slope,
+                  pct: mean ? slope / mean * 100 : 0,
+                  first: values[0], last: values[values.length - 1] });
+  }
+  rowsMK.sort((a, b) => a.p - b.p);
+  const band = p => p < 0.01 ? 'p<0.01' : p < 0.05 ? 'p<0.05' : 'p<0.10, weak';
+  const verdict = r => {
+    if (r.p >= 0.1) return 'no detectable trend';
+    const dir = r.slope > 0 ? 'increasing' : 'declining';
+    return `${dir} (${band(r.p)})`;
+  };
+  renderTable($('t-mk'),
+    [{ label: 'Species', left: true, get: r => A.species[r.sp] },
+     { label: 'Seasons', get: r => r.n },
+     { label: "Sen's slope", get: r => (r.slope > 0 ? '+' : '') + fmt(Math.round(r.slope)) + '/yr' },
+     { label: 'As % of mean', get: r => (r.pct > 0 ? '+' : '') + r.pct.toFixed(1) + '%/yr' },
+     { label: 'z', get: r => r.z.toFixed(2) },
+     { label: 'p', get: r => r.p < 0.001 ? '<0.001' : r.p.toFixed(3) },
+     { label: 'Verdict', left: true, get: r => {
+         const s2 = document.createElement('span');
+         s2.textContent = verdict(r);
+         /* only colour what clears the conventional threshold; a weak result
+            should not look like a finding */
+         if (r.p < 0.05) s2.style.color = cssv(r.slope > 0 ? '--good' : '--crit');
+         return s2; } }],
+    rowsMK,
+    { caption: 'Mann-Kendall on adults trapped per season, final reports only. '
+             + 'Rank-based, so it assumes neither a straight line nor normal errors. '
+             + 'p below 0.05 is conventionally called significant; with ~27 points '
+             + 'a real trend has to be substantial to clear it.' });
+
+  /* ---------- anomaly against the trailing ten-season mean ---------- */
+  const sel = $('anom-species');
+  if (!sel.options.length) {
+    SP_ORDER.forEach(sp => sel.appendChild(new Option(A.species[sp], sp)));
+    sel.value = state.anomSp ?? SP_ORDER[0];
+    sel.addEventListener('change', () => { state.anomSp = +sel.value; renderAll(); });
+  }
+  const asp = state.anomSp ?? SP_ORDER[0];
+  const { years: ays, values: avals } = speciesSeries(asp);
+  const anom = [], base = [];
+  ays.forEach((y, i) => {
+    if (i < 10) { anom.push(null); base.push(null); return; }
+    const win = avals.slice(i - 10, i);
+    const m = win.reduce((a, b) => a + b, 0) / win.length;
+    base.push(m);
+    anom.push(m ? (avals[i] - m) / m * 100 : null);
+  });
+  const svg = $('c-anom');
+  clear(svg);
+  (function anomalyBars() {
+    const Wd = width(svg), H = 320, m = { t: 16, r: 16, b: 28, l: 52 };
+    svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+    const iw = Wd - m.l - m.r, ih = H - m.t - m.b;
+    const vals = anom.filter(v => v != null);
+    if (!vals.length) return;
+    const lim = Math.max(40, Math.ceil(Math.max(...vals.map(Math.abs)) / 20) * 20);
+    const Y = v => m.t + ih / 2 - (v / lim) * (ih / 2);
+    for (const t of [-lim, -lim / 2, 0, lim / 2, lim]) {
+      el('line', { class: t === 0 ? 'axis-line' : 'gridline',
+                   x1: m.l, x2: m.l + iw, y1: Y(t), y2: Y(t) }, svg);
+      el('text', { class: 'tick', x: m.l - 8, y: Y(t) + 4, 'text-anchor': 'end' }, svg)
+        .textContent = (t > 0 ? '+' : '') + t + '%';
+    }
+    const bw = Math.min(22, (iw / ays.length) * .7);
+    ays.forEach((y, i) => {
+      const v = anom[i];
+      if (v == null) return;
+      const cx = m.l + (i + .5) * (iw / ays.length);
+      const h = Math.abs(v / lim) * (ih / 2);
+      const bar = el('rect', { class: 'bar', x: cx - bw / 2, y: v >= 0 ? Y(v) : Y(0),
+        width: bw, height: Math.max(1, h), rx: 3,
+        fill: cssv(v >= 0 ? '--s3' : '--s2') }, svg);
+      bar.addEventListener('pointermove', ev => showTip(ev.clientX, ev.clientY,
+        seasonLabel(y), [
+          { color: cssv(v >= 0 ? '--s3' : '--s2'),
+            value: (v > 0 ? '+' : '') + v.toFixed(0) + '%', name: 'vs the previous 10 seasons' },
+          { value: fmt(avals[i]), name: 'adults' },
+          { value: fmt(Math.round(base[i])), name: '10-season mean' }]));
+      bar.addEventListener('pointerleave', hideTip);
+    });
+    const step = Math.max(1, Math.ceil(ays.length / Math.max(2, Math.floor(iw / 68))));
+    for (let i = ays.length - 1; i >= 0; i -= step)
+      el('text', { class: 'tick', x: m.l + (i + .5) * (iw / ays.length), y: H - 8,
+                   'text-anchor': 'middle' }, svg).textContent = season(ays[i]);
+  })();
+  renderLegend($('l-anom'), [
+    { name: 'above the ten-season mean', color: cssv('--s3') },
+    { name: 'below it', color: cssv('--s2') }], true);
+  $('anom-note').textContent =
+    `${A.species[asp]}: each season as a percentage difference from the mean of the ` +
+    `ten seasons before it. The first ten seasons have no baseline and are blank.`;
+  renderTable($('t-anom'),
+    [{ label: 'Season', left: true, get: r => seasonLabel(r.y) },
+     { label: 'Adults', get: r => fmt(avals[r.i]) },
+     { label: '10-season mean', get: r => base[r.i] == null ? '—' : fmt(Math.round(base[r.i])) },
+     { label: 'Difference', get: r => anom[r.i] == null ? '—'
+        : (anom[r.i] > 0 ? '+' : '') + anom[r.i].toFixed(1) + '%' }],
+    ays.map((y, i) => ({ y, i })));
+
+  /* ---------- run-timing shift ---------- */
+  if (W) {
+    const shiftSeries = [], shiftRows = [];
+    for (const spName of PRIMARY) {
+      const wi = W.species.indexOf(spName);
+      if (wi < 0) continue;
+      const pts = W.series.filter(s => s.sp === wi && s.done && s.from_start
+                                   && s.season >= state.from && s.season <= state.to)
+        /* day of year of the median fish. Week-since-first-report is not comparable
+           between seasons — each season's first report falls on a different date, so
+           a shift in reporting masquerades as a shift in the run. */
+        .map(s => (s.med_off != null ? [s.season, s.med_off] : null))
+        .filter(Boolean).sort((a, b) => a[0] - b[0]);
+      if (pts.length < 6) continue;
+      const gsp = A.species.indexOf(spName);
+      const fit = ordinaryLeastSquares(pts.map(p => p[0]), pts.map(p => p[1]));
+      const mk = mannKendall(pts.map(p => p[1]));
+      shiftRows.push({ name: spName, n: pts.length, slope: fit.slope,
+                       days: fit.slope, p: mk ? mk.p : 1 });
+      const yrsAll = [...new Set(W.series.filter(s => s.done && s.from_start)
+                                  .map(s => s.season))]
+        .filter(y => y >= state.from && y <= state.to).sort((a, b) => a - b);
+      const map = new Map(pts);
+      shiftSeries.push({ name: spName, color: gsp >= 0 ? colorOf(gsp) : cssv('--ink-3'),
+                         xs: yrsAll, values: yrsAll.map(y => map.get(y) ?? null),
+                         fit });
+    }
+    const xs = shiftSeries.length ? shiftSeries[0].xs : [];
+    if (shiftSeries.length > 4) shiftSeries.forEach(s => s.label = false);
+    lineChart($('c-shift'), { xs, series: shiftSeries, xLabel: season,
+      yFmt: v => DOY_LABEL(v), valFmt: v => DOY_LABEL(v) });
+    renderLegend($('l-shift'), shiftSeries.map(s => ({ name: s.name, color: s.color })));
+    renderTable($('t-shift'),
+      [{ label: 'Species', left: true, get: r => r.name },
+       { label: 'Seasons', get: r => r.n },
+       { label: 'Shift per season', get: r =>
+           (r.days > 0 ? '+' : '') + r.days.toFixed(1) + ' days' },
+       { label: 'Across the record', get: r =>
+           (r.days * (r.n - 1) > 0 ? '+' : '') + (r.days * (r.n - 1)).toFixed(0) + ' days' },
+       { label: 'p', get: r => r.p < 0.001 ? '<0.001' : r.p.toFixed(3) },
+       { label: 'Reading', left: true, get: r => {
+           const s2 = document.createElement('span');
+           s2.textContent = r.p >= 0.1 ? 'no detectable shift'
+             : (r.days > 0 ? 'running later' : 'running earlier');
+           if (r.p < 0.1) s2.style.color = cssv('--ink');
+           return s2; } }],
+      shiftRows.sort((a, b) => a.p - b.p),
+      { caption: 'Date by which half that season\'s fish had arrived, measured from '
+               + '1 March so runs that cross the new year stay comparable. From '
+               + 'the weekly reports (2013 on). Slope by least squares; p from '
+               + 'Mann-Kendall. Two caveats worth keeping in mind: this is arrival at '
+               + 'a trap, so it reflects when the rack was operated as well as when the '
+               + 'fish moved; and a dozen seasons is a short record for a phenological '
+               + 'trend. Seasons whose run was not observed from the beginning are '
+               + 'excluded, because a median needs the start of the run to mean anything.' });
+  }
+
+  /* ---------- jack-based forecast ---------- */
+  const fcRows = [], fcSeries = [];
+  for (const sp of SP_ORDER) {
+    if (!spColorVar.has(sp)) continue;
+    const per = new Map();
+    for (const r of rowsInScope()) {
+      if (r[C.sp] !== sp || isPrelim(r[C.year])) continue;
+      const e = per.get(r[C.year]) || [0, 0];
+      e[0] += r[C.adults]; e[1] += r[C.jacks];
+      per.set(r[C.year], e);
+    }
+    const ys = [...per.keys()].sort((a, b) => a - b);
+    const pairs = ys.filter(y => per.has(y + 1) && per.get(y)[1] > 0)
+      .map(y => ({ y, jacks: per.get(y)[1], next: per.get(y + 1)[0] }));
+    if (pairs.length < 8) continue;
+    const rJack = pearson(pairs.map(p => p.jacks), pairs.map(p => p.next));
+    const persist = ys.filter(y => per.has(y + 1) && per.get(y)[0] > 0)
+      .map(y => ({ a: per.get(y)[0], next: per.get(y + 1)[0] }));
+    const rPersist = pearson(persist.map(p => p.a), persist.map(p => p.next));
+    const fit = ordinaryLeastSquares(pairs.map(p => p.jacks), pairs.map(p => p.next));
+    const lastY = ys[ys.length - 1];
+    const pred = per.get(lastY)[1] > 0
+      ? fit.intercept + fit.slope * per.get(lastY)[1] : null;
+    fcRows.push({ sp, n: pairs.length, rJack, rPersist, pred, lastY,
+                  useful: rJack > rPersist && rJack > 0.45 });
+    if (rJack > rPersist && rJack > 0.45) fcSeries.push({ sp, pairs, fit, rJack });
+  }
+
+  /* only chart the species where jacks actually beat the naive model */
+  const chart = fcSeries[0];
+  const svg2 = $('c-fc');
+  clear(svg2);
+  if (chart) {
+    const Wd = width(svg2), H = 330, m = { t: 18, r: 18, b: 40, l: 62 };
+    svg2.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+    const iw = Wd - m.l - m.r, ih = H - m.t - m.b;
+    const xsv = chart.pairs.map(p => p.jacks), ysv = chart.pairs.map(p => p.next);
+    const xmax = Math.max(...xsv) * 1.08, ymax = Math.max(...ysv) * 1.08;
+    const X = v => m.l + (v / xmax) * iw, Y = v => m.t + ih - (v / ymax) * ih;
+    for (const t of niceTicks(ymax)) {
+      el('line', { class: 'gridline', x1: m.l, x2: m.l + iw, y1: Y(t), y2: Y(t) }, svg2);
+      el('text', { class: 'tick', x: m.l - 8, y: Y(t) + 4, 'text-anchor': 'end' }, svg2)
+        .textContent = compact(t);
+    }
+    for (const t of niceTicks(xmax))
+      el('text', { class: 'tick', x: X(t), y: H - 20, 'text-anchor': 'middle' }, svg2)
+        .textContent = compact(t);
+    el('line', { class: 'axis-line', x1: m.l, x2: m.l + iw, y1: Y(0), y2: Y(0) }, svg2);
+    el('path', { class: 'serie', stroke: cssv('--ink-3'), 'stroke-opacity': .7,
+      d: `M${X(0)} ${Y(chart.fit.intercept)}L${X(xmax)} ${Y(chart.fit.intercept + chart.fit.slope * xmax)}` }, svg2);
+    for (const p of chart.pairs) {
+      const dot = el('circle', { class: 'endcap', cx: X(p.jacks), cy: Y(p.next), r: 5,
+        fill: colorOf(chart.sp) }, svg2);
+      const hit = el('circle', { class: 'site-hit', cx: X(p.jacks), cy: Y(p.next), r: 14 }, svg2);
+      hit.addEventListener('pointermove', ev => showTip(ev.clientX, ev.clientY,
+        `${season(p.y)} jacks → ${season(p.y + 1)} adults`, [
+          { color: colorOf(chart.sp), value: fmt(p.jacks), name: `jacks in ${season(p.y)}` },
+          { value: fmt(p.next), name: `adults in ${season(p.y + 1)}` }]));
+      hit.addEventListener('pointerleave', hideTip);
+    }
+    el('text', { class: 'tick', x: m.l + iw / 2, y: H - 4, 'text-anchor': 'middle' }, svg2)
+      .textContent = `jacks in season N  →  adults in season N+1   (r = ${chart.rJack.toFixed(2)})`;
+    renderLegend($('l-fc'), [{ name: A.species[chart.sp] + ' — each point is a season pair',
+                               color: colorOf(chart.sp) }]);
+  } else {
+    renderLegend($('l-fc'), []);
+  }
+  const useful = fcRows.filter(r => r.useful);
+  $('fc-note').textContent = useful.length
+    ? `Jacks return a year early, so their number leads the adult run behind them. `
+      + `On this selection that holds for ${useful.map(r => A.species[r.sp]).join(' and ')} — `
+      + `where jack counts predict next season better than last season's adults do. `
+      + `For the rest, they do not, and the table says so.`
+    : 'On this selection, jack counts do not beat simply carrying last season forward '
+      + 'for any species. Nothing here is worth forecasting from.';
+  renderTable($('t-fc'),
+    [{ label: 'Species', left: true, get: r => A.species[r.sp] },
+     { label: 'Season pairs', get: r => r.n },
+     { label: 'r, jacks → next adults', get: r => r.rJack.toFixed(2) },
+     { label: 'r, last adults → next', get: r => r.rPersist.toFixed(2) },
+     { label: `Implied ${A.species ? '' : ''}next run`, get: r =>
+         r.useful && r.pred != null ? fmt(Math.round(Math.max(0, r.pred))) : '—' },
+     { label: 'Use it?', left: true, get: r => {
+         const s2 = document.createElement('span');
+         s2.textContent = r.useful ? 'yes — beats persistence' : 'no — persistence is as good';
+         s2.style.color = cssv(r.useful ? '--good' : '--ink-3');
+         return s2; } }],
+    fcRows.sort((a, b) => b.rJack - a.rJack),
+    { caption: 'A forecast is only worth having if it beats the naive alternative of '
+             + 'assuming next season looks like this one. The last column applies that '
+             + 'test. Implied runs are a single-predictor regression, shown only where '
+             + 'the test passes, and are an indication rather than a stock assessment.' });
+}
+</script>
+
+<script>
+"use strict";
+(function currency() {
+  const el = $('currency');
+  if (!el) return;
+  const A2 = A, fin = A2.final_through, prelim = (A2.preliminary_seasons || []);
+  const IS = RAW.in_season;
+  const add = (t, strong) => {
+    const n = document.createElement(strong ? 'b' : 'span');
+    n.textContent = t; el.appendChild(n);
+  };
+  add('Final reports run through ');
+  add(season(fin), true);
+  add('. ');
+  if (prelim.length) {
+    add(prelim.map(season).join(', '), true);
+    add(prelim.length > 1 ? ' are preliminary — ' : ' is preliminary — ');
+    add('rebuilt from the weekly in-season reports, because WDFW publishes a '
+      + "season's final report about a year after it ends. ");
+  }
+  if (IS) {
+    const total = IS.species.reduce((a, x) => a + x[1], 0);
+    add(season(IS.year), true);
+    add(' is under way: ');
+    add(fmt(total), true);
+    add(` adults so far across ${IS.facilities} racks, through the report of `
+      + `${IS.through}. In-progress seasons are not charted against completed ones.`);
+  }
+})();
+
 (function provenance() {
   const m = RAW.meta || {};
   const bits = [];

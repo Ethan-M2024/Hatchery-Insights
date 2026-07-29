@@ -37,8 +37,29 @@ TYPE_WORD = re.compile(
     r'\b(HATCHERY|HATCHRY|HATCH|PONDS?|REARING|REARIN|TRAP|FCF|SALMON)\b')
 
 
+# "RINGOLD SPRINGS HATCHERYPriest" — the facility name and the stock beside it are
+# extracted as one token when the glyphs nearly touch. Facilities are upper case and
+# stocks are title case, so the seam is recoverable.
+RUN_TOGETHER = re.compile(r'([A-Z]{2,})([A-Z][a-z])')
+
+
+def split_run_together(name):
+    """Cut a facility name where the stock name was glued onto it.
+
+    "RINGOLD SPRINGS HATCHERYPriest" is one token in the PDF. The facility is upper
+    case and the stock title case, so the seam is unambiguous — and everything from
+    the seam onward belongs to the stock, not the rack.
+    """
+    n = name or ''
+    m = RUN_TOGETHER.search(n)
+    if m:
+        n = n[:m.start(2)]
+    # a title-case tail after an all-caps name is stock text too
+    return re.sub(r'(?<=[A-Z])\s+[A-Z][a-z]\w*(?:[-\s]\w+)*\s*$', '', n).strip()
+
+
 def norm_fac(name):
-    n = re.sub(r'\s+', ' ', (name or '').strip().upper())
+    n = re.sub(r'\s+', ' ', split_run_together(name).strip().upper())
     n = n.replace('.', '').replace(',', '').replace("'", '')
     n = n.replace('COWLTIZ', 'COWLITZ').replace('VOIGHTS', 'VOIGHT')
     n = re.sub(r'\bCREEK\b', 'CR', n)
@@ -127,6 +148,23 @@ SALMONID_ORDER = ['Chinook', 'Coho', 'Chum', 'Sockeye', 'Pink', 'Steelhead',
                   'Cutthroat', 'Kokanee', 'Rainbow', 'Dolly/Bull Trout']
 
 
+def weekly_facility_names(path=None):
+    """Facility names that appear in the weekly reports.
+
+    Seasons rebuilt from weekly data can involve racks the annual reports have not
+    listed yet, and those still need coordinates.
+    """
+    path = path or paths.RAW_WEEKLY
+    if not os.path.exists(path):
+        return set()
+    out = set()
+    for r in csv.DictReader(open_text(path)):
+        n = norm_fac(r.get('facility'))
+        if n:
+            out.add(n)
+    return out
+
+
 def gis_merge(names):
     """Names that the WDFW GIS layer resolves to the same physical site are the same
     hatchery under a different report-era spelling (SOL DUC / SOLDUC). Fold them onto
@@ -202,6 +240,9 @@ def build_annual():
         'facilities': inv(facs), 'stocks': inv(stocks), 'species': inv(sps),
         'races': inv(races), 'regions': inv(regions),
         'rows': recs,
+        # how a raw facility string became one of the names above; preliminary rows
+        # must resolve through exactly the same map or the same rack appears twice
+        '_facmap': {'alias': alias, 'merged': merged},
     }
 
 
@@ -248,12 +289,13 @@ def build_weekly(annual_totals=None):
         cur = None
         for d, total in pts:
             if cur is None or (cur['peak'] > 200 and total < cur['peak'] * 0.4):
-                cur = {'grp': grp, 'start': d, 'peak': total, 'wk': {}}
+                cur = {'grp': grp, 'start': d, 'peak': total, 'wk': {}, 'dates': {}}
                 runs.append(cur)
             cur['peak'] = max(cur['peak'], total)
             wk = (d - cur['start']).days // 7
             if 0 <= wk <= 60:
                 cur['wk'][wk] = max(cur['wk'].get(wk, 0), total)
+                cur['dates'][d] = total
 
     bysp = collections.defaultdict(dict)
     for run in runs:
@@ -266,6 +308,7 @@ def build_weekly(annual_totals=None):
         med = next((w for w in sorted(wks) if wks[w] >= end * 0.5), 0)
         mid = run['start'] + datetime.timedelta(days=med * 7)
         season = mid.year if mid.month >= SEASON_START_MONTH else mid.year - 1
+        run['season'] = season
         prev = bysp[(run['grp'], season)]
         for w, v in wks.items():
             prev[w] = max(prev.get(w, 0), v)
@@ -279,7 +322,23 @@ def build_weekly(annual_totals=None):
             series.append([w, run])
         if run < 500 or len(series) < 12:   # partial or noise-level, not a run curve
             continue
-        out.append({'sp': sps.index(grp), 'season': season, 'w': series})
+        end_v = series[-1][1]
+        med_wk = next((w for w, v in series if v >= end_v * 0.5), series[0][0])
+        run_start = next((r['start'] for r in runs
+                          if r.get('season') == season and r['grp'] == grp), None)
+        med_date = (run_start + datetime.timedelta(days=med_wk * 7)) if run_start else None
+        out.append({'sp': sps.index(grp), 'season': season, 'w': series,
+                    'med': med_date.isoformat() if med_date else None,
+                    # Days from 1 March of the season year to the median fish. Calendar
+                    # day-of-year cannot be used: chum and coho run across the new year,
+                    # so 20 Dec (354) to 5 Jan (5) would read as a 349-day swing.
+                    'med_off': ((med_date - datetime.date(season, SEASON_START_MONTH, 1)).days
+                                if med_date else None),
+                    # Was the run observed from its beginning? The weekly archive opens
+                    # in January 2013, so the first season is a tail fragment whose
+                    # "median" is really just its first report. A median arrival date
+                    # means nothing unless the start of the run was seen.
+                    'from_start': 1 if series[0][1] <= end_v * 0.15 else 0})
     # A season's curve is only comparable once the run is over. Reporting stops at
     # different weeks for different species, so completeness is judged by whether a
     # later season was observed for that species — a reset proves the run ended.
@@ -309,9 +368,155 @@ def build_weekly(annual_totals=None):
     remap = {old: n for n, old in enumerate(used)}
     for s in out:
         s['sp'] = remap[s['sp']]
+    # the date span each species' season occupies, and the report date on which that
+    # season's cumulative count peaked — that snapshot is the season's breakdown
+    windows = collections.defaultdict(list)
+    peaks = {}
+    for run in runs:
+        if 'season' not in run:
+            continue
+        last = max(run['wk']) if run['wk'] else 0
+        windows[run['grp']].append(
+            (run['season'], run['start'],
+             run['start'] + datetime.timedelta(days=last * 7 + 6)))
+        if run.get('dates'):
+            # the date a report was actually published, not start + 7n: WDFW posts on
+            # Thursdays but skips weeks, so the arithmetic date can miss every report
+            peaks[(run['grp'], run['season'])] = max(run['dates'],
+                                                     key=lambda d: run['dates'][d])
+
     return {'species': [sps[o] for o in used], 'series': out,
             'n_reports': len(rep_meta), 'n_files': len(seen_files),
-            'dropped': dropped}
+            'dropped': dropped,
+            'windows': {k: [(a, b.isoformat(), c.isoformat()) for a, b, c in v]
+                        for k, v in windows.items()},
+            'peaks': {f'{g}|{sn}': d.isoformat() for (g, sn), d in peaks.items()}}
+
+
+def build_preliminary(windows, after_year, newest_report, peaks=None):
+    """Facility-level rows for seasons that have finished but have no final report yet.
+
+    A weekly report is a cumulative snapshot of the whole state, so the honest way to
+    get a facility breakdown is to take *one* snapshot — the report where that
+    species' season-to-date count peaked — and read its rows. Summing per-facility
+    maxima across different reports does not work: the same rack reappears under
+    slightly different stock spellings from week to week, and each variant keeps its
+    own running total, which inflated the 2024-25 season by 74% when tested against
+    the published final.
+
+    Decomposing the one snapshot whose total is already validated against the annual
+    reports means the parts can never disagree with the whole.
+    """
+    import datetime
+    if not os.path.exists(paths.RAW_WEEKLY) or not peaks:
+        return [], None
+
+    def finished(season):
+        return datetime.date(season + 1, SEASON_START_MONTH, 1) < newest_report
+
+    # (group, season) -> the report date whose cumulative total was highest
+    wanted = {(g, sn): d for (g, sn), d in peaks.items() if sn > after_year}
+    by_date = collections.defaultdict(set)
+    for (g, sn), d in wanted.items():
+        by_date[d].add(g)
+
+    rows = collections.defaultdict(lambda: [0, 0, 0, 0])
+    for r in csv.DictReader(open_text(paths.RAW_WEEKLY)):
+        rd = r.get('report_date') or ''
+        try:
+            d = datetime.datetime.strptime(rd.split(', ', 1)[1], '%B %d, %Y').date()
+        except (ValueError, IndexError):
+            continue
+        if d not in by_date:
+            continue
+        grp, race = norm_species(r.get('species'))
+        if grp not in by_date[d]:
+            continue
+        season = next(sn for (g, sn), dd in wanted.items() if g == grp and dd == d)
+        stock = (r.get('stock') or '').strip()
+        m = re.search(r'-\s*([HWM])\s*$', stock)
+        bo = {'H': 1, 'W': 2, 'M': 3}.get(m.group(1), 0) if m else 0
+        stock_name = re.sub(r'-\s*[HWM]\s*$', '', stock).strip()
+        key = (season, grp, norm_race(race), norm_fac(r.get('facility')), stock_name, bo)
+        v = rows[key]
+        v[0] += i(r.get('adult_total'))
+        v[1] += i(r.get('jack_total'))
+        v[2] += i(r.get('eggtake'))
+        v[3] += i(r.get('live_released'))
+
+    done, running = [], []
+    for (season, grp, race, fac, stock, bo), v in rows.items():
+        (done if finished(season) else running).append(
+            {'year': season, 'sp': grp, 'race': race, 'fac': fac, 'stock': stock,
+             'bo': bo, 'adults': v[0], 'jacks': v[1], 'eggtake': v[2], 'released': v[3]})
+    return done, running
+
+
+FATE_FIELDS = ['adult_total', 'jack_total', 'mortality', 'surplus',
+               'live_released', 'lethal_spawned', 'live_spawned', 'eggtake']
+
+
+def build_fate(peaks, facmap=None):
+    """What became of the fish at each rack, per facility, species and season.
+
+    The weekly reports carry the full disposition — how many were spawned, passed
+    upstream, surplussed, and how many died before spawning — but only the trapped
+    count was ever used. Each season is read from the single report where that
+    species' cumulative count peaked; measured against the season maximum of every
+    field, that snapshot loses nothing (0.0% on all but sockeye mortality, 8.5%),
+    and it guarantees the parts sum to a total already validated against the
+    published annual reports.
+    """
+    import datetime
+    if not os.path.exists(paths.RAW_WEEKLY) or not peaks:
+        return None
+    by_date = collections.defaultdict(set)
+    for (g, sn), d in peaks.items():
+        by_date[d].add(g)
+
+    alias = (facmap or {}).get('alias', {})
+    merged = (facmap or {}).get('merged', {})
+
+    acc = collections.defaultdict(lambda: [0] * len(FATE_FIELDS))
+    for r in csv.DictReader(open_text(paths.RAW_WEEKLY)):
+        rd = r.get('report_date') or ''
+        try:
+            d = datetime.datetime.strptime(rd.split(', ', 1)[1], '%B %d, %Y').date()
+        except (ValueError, IndexError):
+            continue
+        if d not in by_date:
+            continue
+        grp, _ = norm_species(r.get('species'))
+        if grp not in by_date[d]:
+            continue
+        season = next(sn for (g, sn), dd in peaks.items() if g == grp and dd == d)
+        fac = norm_fac(r.get('facility'))
+        fac = merged.get(alias.get(fac, fac), alias.get(fac, fac))
+        v = acc[(season, grp, fac)]
+        for k, f in enumerate(FATE_FIELDS):
+            v[k] += i(r.get(f))
+
+    sps, facs, rows = {}, {}, []
+
+    def idx(d, k):
+        if k not in d:
+            d[k] = len(d)
+        return d[k]
+
+    for (season, grp, fac), v in sorted(acc.items()):
+        if not any(v):
+            continue
+        rows.append([season, idx(sps, grp), idx(facs, fac)] + v)
+
+    def inv(d):
+        out = [None] * len(d)
+        for k, n in d.items():
+            out[n] = k
+        return out
+
+    return {'cols': ['year', 'sp', 'fac', 'trapped', 'jacks', 'mortality', 'surplus',
+                     'released', 'lethal_spawned', 'live_spawned', 'eggtake'],
+            'species': inv(sps), 'facilities': inv(facs), 'rows': rows}
 
 
 def latest_weekly_report_date():
@@ -348,6 +553,60 @@ def build_geo(facilities):
                        '(geodataservices.wdfw.wa.gov)')}
 
 
+def merge_preliminary(A, prelim):
+    """Fold preliminary rows into the annual table, reusing its string dictionaries."""
+    ci = {c: n for n, c in enumerate(A['cols'])}
+    idx = {'sp': {v: i for i, v in enumerate(A['species'])},
+           'race': {v: i for i, v in enumerate(A['races'])},
+           'fac': {v: i for i, v in enumerate(A['facilities'])},
+           'stock': {v: i for i, v in enumerate(A['stocks'])},
+           'region': {v: i for i, v in enumerate(A['regions'])}}
+
+    def intern(kind, key, store):
+        if key not in idx[kind]:
+            idx[kind][key] = len(store)
+            store.append(key)
+        return idx[kind][key]
+
+    # a facility's region is stable, so take it from its own history
+    region_of = {}
+    for r in A['rows']:
+        region_of.setdefault(r[ci['fac']], r[ci['region']])
+    unknown = intern('region', 'Unknown', A['regions'])
+
+    fm = A.get('_facmap', {})
+    alias, merged = fm.get('alias', {}), fm.get('merged', {})
+    known = set(A['facilities'])
+
+    def canon(name):
+        n = alias.get(name, name)
+        n = merged.get(n, n)
+        if n in known:
+            return n
+        # an unseen weekly spelling: attach it to an existing rack when one clearly
+        # contains it, rather than minting a duplicate facility
+        hits = [k for k in known if k and (k.startswith(n + ' ') or n.startswith(k + ' '))]
+        return hits[0] if len(hits) == 1 else n
+
+    added = 0
+    for p in prelim:
+        fac = intern('fac', canon(p['fac']), A['facilities'])
+        row = [p['year'],
+               intern('sp', p['sp'], A['species']),
+               intern('race', p['race'], A['races']),
+               region_of.get(fac, unknown),
+               fac,
+               intern('stock', p['stock'], A['stocks']),
+               p['bo'],
+               p['adults'], p['jacks'], 0, 0,
+               p['eggtake'], -1,
+               p['released'], 0,
+               max(0, p['adults'] - p['released']), 0]
+        A['rows'].append(row)
+        added += 1
+    return added
+
+
 def main():
     data = {'annual': build_annual()}
     A = data['annual']
@@ -358,6 +617,46 @@ def main():
     wk = build_weekly(totals)
     if wk:
         data['weekly'] = wk
+    # Seasons that have run their course but whose final report is not out yet get
+    # preliminary rows from the weekly series, so the dashboard reaches the present.
+    facmap = A.get('_facmap', {})
+    final_through = max(r[0] for r in A['rows'])
+    prelim_seasons, running_season = [], None
+    if wk and wk.get('windows'):
+        newest = latest_weekly_report_date()
+        import datetime as _d
+        peaks = {(k.rsplit('|', 1)[0], int(k.rsplit('|', 1)[1])):
+                 _d.date.fromisoformat(v) for k, v in (wk.get('peaks') or {}).items()}
+        done, running = build_preliminary(
+            wk['windows'], final_through,
+            _d.date.fromisoformat(newest) if newest else _d.date.today(), peaks)
+        if done:
+            merge_preliminary(A, done)
+            prelim_seasons = sorted({p['year'] for p in done})
+        if running:
+            yr = max(p['year'] for p in running)
+            cur = [p for p in running if p['year'] == yr]
+            by_sp = collections.defaultdict(lambda: [0, 0, 0])
+            for p in cur:
+                e = by_sp[p['sp']]
+                e[0] += p['adults']; e[1] += p['jacks']; e[2] += p['eggtake']
+            running_season = {
+                'year': yr,
+                'through': newest,
+                'facilities': len({p['fac'] for p in cur if p['adults'] > 0}),
+                'species': sorted(([k] + v for k, v in by_sp.items()),
+                                  key=lambda x: -x[1]),
+            }
+    if wk and wk.get('peaks'):
+        fate = build_fate(peaks, facmap)
+        if fate:
+            data['fate'] = fate
+    A['preliminary_seasons'] = prelim_seasons
+    A['final_through'] = final_through
+    A.pop('_facmap', None)
+    if running_season:
+        data['in_season'] = running_season
+
     g = build_geo(data['annual']['facilities'])
     if g:
         data['geo'] = g
@@ -374,14 +673,24 @@ def main():
         'seasons': sorted({r[0] for r in data['annual']['rows']}),
         'latest_fetch': (fetched[-1] if fetched else None),
         'latest_report': latest_weekly_report_date(),
-        'n_annual_reports': len({r[0] for r in data['annual']['rows']}),
+        'n_annual_reports': len({r[0] for r in data['annual']['rows']}) - len(prelim_seasons),
+        'preliminary_seasons': prelim_seasons,
+        'final_through': final_through,
         'n_weekly_reports': (wk or {}).get('n_reports', 0),
     }
     json.dump(data, open(paths.PAYLOAD, 'w'), separators=(',', ':'))
+    if prelim_seasons:
+        print('preliminary seasons added from weekly reports:',
+              ', '.join(f'{y}-{(y+1) % 100:02d}' for y in prelim_seasons))
+    if running_season:
+        print(f"in-season now: {running_season['year']}-"
+              f"{(running_season['year'] + 1) % 100:02d} through {running_season['through']}")
     print('annual rows', len(data['annual']['rows']),
           '| facilities', len(data['annual']['facilities']),
           '| species', len(data['annual']['species']),
           '| geocoded', (g or {}).get('n', 0))
+    if data.get('fate'):
+        print('fate rows (facility x species x season):', len(data['fate']['rows']))
     if wk:
         print('weekly series', len(wk['series']), 'from', wk['n_reports'], 'reports',
               f"({len(wk['dropped'])} mis-segmented dropped)" if wk.get('dropped') else '')
