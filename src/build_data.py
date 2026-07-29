@@ -314,6 +314,23 @@ def build_weekly(annual_totals=None):
             'dropped': dropped}
 
 
+def latest_weekly_report_date():
+    """Date of the most recent weekly report actually present in the data."""
+    import datetime as _dt
+    if not os.path.exists(paths.RAW_WEEKLY):
+        return None
+    best = None
+    for r in csv.DictReader(open_text(paths.RAW_WEEKLY)):
+        rd = r.get('report_date') or ''
+        try:
+            d = _dt.datetime.strptime(rd.split(', ', 1)[1], '%B %d, %Y').date()
+        except (ValueError, IndexError):
+            continue
+        if best is None or d > best:
+            best = d
+    return best.isoformat() if best else None
+
+
 def build_geo(facilities):
     """Attach WDFW GIS coordinates and watershed context, indexed to match rows."""
     if not os.path.exists(paths.FACILITY_GEO):
@@ -332,7 +349,6 @@ def build_geo(facilities):
 
 
 def main():
-    import datetime as _dt
     data = {'annual': build_annual()}
     A = data['annual']
     ci = {c: n for n, c in enumerate(A['cols'])}
@@ -349,12 +365,15 @@ def main():
         # simplified Washington coastline/border for the locator map
         data['outline'] = json.load(open(paths.OUTLINE))
     manifest = json.load(open(paths.MANIFEST)) if os.path.exists(paths.MANIFEST) else {}
-    fetched = sorted((v.get('fetched') or '') for v in manifest.values())
+    fetched = sorted(v.get('fetched') or '' for v in manifest.values())
+    # Every field here is derived from the data, never from the wall clock, so a run
+    # that finds nothing new produces a byte-identical payload.
     data['meta'] = {
         'source': 'https://wdfw.wa.gov/fishing/management/hatcheries/escapement',
+        'repo': 'https://github.com/Ethan-M2024/wdfw-hatchery-escapement',
         'seasons': sorted({r[0] for r in data['annual']['rows']}),
-        'built': _dt.datetime.now(_dt.timezone.utc).isoformat(timespec='seconds'),
-        'latest_fetch': fetched[-1] if fetched else None,
+        'latest_fetch': (fetched[-1] if fetched else None),
+        'latest_report': latest_weekly_report_date(),
         'n_annual_reports': len({r[0] for r in data['annual']['rows']}),
         'n_weekly_reports': (wk or {}).get('n_reports', 0),
     }

@@ -2582,16 +2582,23 @@ if (W) $('wk-count').textContent = fmt(W.n_reports);
   const bits = [];
   if (m.n_annual_reports) bits.push(`${m.n_annual_reports} annual reports`);
   if (m.n_weekly_reports) bits.push(`${fmt(m.n_weekly_reports)} weekly reports`);
-  if (RAW.geo) bits.push(`${RAW.geo.n} geocoded facilities`);
+  if (RAW.geo) bits.push(`${RAW.geo.n} mapped hatcheries`);
   const el = $('foot-build');
   if (!el) return;
   const b = document.createElement('strong'); b.textContent = 'Build. ';
   el.appendChild(b);
   el.appendChild(document.createTextNode(
     bits.join(' · ') +
-    (m.built ? ` · data compiled ${m.built.slice(0, 10)}` : '') +
-    (m.latest_fetch ? ` · sources last fetched ${m.latest_fetch.slice(0, 10)}` : '') +
-    '. Re-run the pipeline to pick up new weekly reports.'));
+    (m.latest_report ? ` · current through the weekly report of ${m.latest_report}` : '') +
+    (m.latest_fetch ? ` · sources last checked ${m.latest_fetch.slice(0, 10)}` : '') +
+    '. '));
+  if (m.repo) {
+    const a = document.createElement('a');
+    a.href = m.repo; a.target = '_blank'; a.rel = 'noopener';
+    a.textContent = 'Source code and update instructions';
+    el.appendChild(a);
+    el.appendChild(document.createTextNode('.'));
+  }
 })();
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderAll, 160); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(renderAll, 30));
