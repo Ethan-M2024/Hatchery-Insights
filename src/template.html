@@ -316,6 +316,16 @@ th.sortable:hover { color: var(--ink); }
 }
 .print-only { display: none; }
 
+/* ---------- per-tab control row ---------- */
+.subbar {
+  display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: flex-end;
+  padding: 2px 2px 0;
+}
+.subbar-note {
+  margin: 0 0 4px; font-size: 12.5px; color: var(--ink-3); flex: 1 1 300px;
+}
+.subbar select { min-width: 210px; }
+
 /* ---------- all-rack sparklines ---------- */
 .facmini {
   display: block; width: 100%; text-align: left; font: inherit; cursor: pointer;
@@ -607,6 +617,23 @@ code { font-family: var(--mono); font-size: .92em; }
 
 <!-- ============ RUN TIMING ============ -->
 <section id="panel-timing" role="tabpanel" aria-labelledby="tab-timing" class="grid hidden">
+  <div class="subbar">
+    <label class="field"><span>Run</span>
+      <select id="timing-species"></select>
+    </label>
+    <p class="subbar-note" id="timing-scope"></p>
+  </div>
+
+  <div class="card" id="card-live">
+    <div class="card-head">
+      <div>
+        <h2>Runs under way right now</h2>
+        <p class="note" id="live-note">Only some runs are in the water at any time of year, so only those can be tracked against a season in progress.</p>
+      </div>
+    </div>
+    <div class="tbl-wrap" id="t-live"></div>
+  </div>
+
   <div class="card" id="card-progress">
     <div class="card-head">
       <div>
@@ -629,10 +656,7 @@ code { font-family: var(--mono); font-size: .92em; }
           Built from the weekly in-season reports, which are cumulative season-to-date.
         </p>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
-        <select id="timing-species"></select>
-        <button class="tbl-toggle" data-table="t-timing">Table</button>
-      </div>
+      <button class="tbl-toggle" data-table="t-timing">Table</button>
     </div>
     <svg class="plot" id="c-timing" height="360"></svg>
     <div class="legend" id="l-timing"></div>
@@ -1839,6 +1863,13 @@ const WEEK_LABEL = w => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
 };
 
+/* runs with data in the season currently in progress */
+const LIVE_YEAR = (RAW.in_season || {}).year ?? null;
+const LIVE_RUNS = new Set(
+  W && LIVE_YEAR != null
+    ? W.series.filter(s => s.season === LIVE_YEAR).map(s => s.sp)
+    : []);
+
 function timingSeries() {
   if (!W) return [];
   /* a season still in progress has no meaningful "share of the season" yet */
@@ -1873,7 +1904,12 @@ function renderTiming() {
       if (!opts.length) continue;
       const og = document.createElement('optgroup');
       og.label = g;
-      for (const [label, i] of opts) og.appendChild(new Option(label, i));
+      for (const [label, i] of opts) {
+        /* say in the list which runs have a season in progress, so nobody has to
+           click through thirty options to find the three that do */
+        const live = LIVE_RUNS.has(i);
+        og.appendChild(new Option(label + (live ? '  · under way' : ''), i));
+      }
       sel.appendChild(og);
     }
     const pref = W.species.indexOf('Chinook \u00b7 Fall');
@@ -1914,6 +1950,13 @@ function renderTiming() {
     { name: latest == null ? 'latest season' : season(latest) + ' (latest in range)', color: cssv('--s1') },
     { name: 'earlier seasons in range', color: cssv('--ink-3') }
   ]);
+  const scope = $('timing-scope');
+  if (scope) {
+    const n = timingSeries().length;
+    scope.textContent = `${W.species[state.timingSp].replace(' · ', ' — ')}: `
+      + `${n} completed season${n === 1 ? '' : 's'} charted below`
+      + (LIVE_RUNS.has(state.timingSp) ? `, plus ${season(LIVE_YEAR)} in progress.` : '.');
+  }
   const selName = W.species[state.timingSp];
   const hasRuns = !selName.includes('\u00b7')
     && W.species.some(n => n.startsWith(selName + ' \u00b7'));
@@ -2172,7 +2215,7 @@ function renderAll() {
     renderAllFacilities(rows, years);
     renderCompare(rows, years);
   } else if (panel === 'panel-timing') {
-    renderTiming(); renderProgress(); renderMedian();
+    renderTiming(); renderLiveRuns(); renderProgress(); renderMedian();
   } else if (panel === 'panel-eggs') {
     renderEggs(rows, years);
   } else if (panel === 'panel-fate') {
@@ -3521,6 +3564,59 @@ function renderTrends(years) {
 /* ===================================================================
    Season progress against the historical envelope
    =================================================================== */
+function renderLiveRuns() {
+  const card = $('card-live');
+  if (!W || LIVE_YEAR == null) { card.classList.add('hidden'); return; }
+  const pctAt = (arr, p) => {
+    const v = arr.filter(x => x != null).sort((a, b) => a - b);
+    if (!v.length) return null;
+    const idx = (v.length - 1) * p, lo = Math.floor(idx), hi = Math.ceil(idx);
+    return v[lo] + (v[hi] - v[lo]) * (idx - lo);
+  };
+  const rows = [];
+  for (const sp of LIVE_RUNS) {
+    const live = W.series.find(s => s.sp === sp && s.season === LIVE_YEAR);
+    const past = W.series.filter(s => s.sp === sp && s.done && s.from_start
+                                   && s.season !== LIVE_YEAR);
+    if (!live) continue;
+    const wk = live.w[live.w.length - 1][0];
+    const now = live.w[live.w.length - 1][1];
+    const atWk = past.map(s => {
+      let run = null;
+      for (const [w, v] of s.w) { if (w <= wk) run = v; }
+      return run;
+    });
+    const med = pctAt(atWk, 0.5);
+    rows.push({ name: W.species[sp].replace(' · ', ' — '), wk, now, med,
+                n: atWk.filter(v => v != null).length,
+                diff: med ? (now - med) / med * 100 : null });
+  }
+  if (!rows.length) { card.classList.add('hidden'); return; }
+  card.classList.remove('hidden');
+  rows.sort((a, b) => b.now - a.now);
+  $('live-note').textContent =
+    `${rows.length} run${rows.length > 1 ? 's are' : ' is'} in the water in `
+    + `${season(LIVE_YEAR)} as of the report of ${(RAW.meta || {}).latest_report || ''}. `
+    + `The rest of the year's runs have either finished or not started — coho, chum and `
+    + `sockeye return in autumn, so in midsummer there is nothing yet to track.`;
+  renderTable($('t-live'),
+    [{ label: 'Run', left: true, get: r => r.name },
+     { label: 'Counted so far', get: r => fmt(r.now) },
+     { label: 'By', left: true, get: r => WEEK_LABEL(r.wk) },
+     { label: 'Typical by now', get: r => r.med == null ? '—' : fmt(Math.round(r.med)) },
+     { label: 'Against typical', get: r => {
+         if (r.diff == null) return '—';
+         const s2 = document.createElement('span');
+         s2.textContent = (r.diff > 0 ? '+' : '') + r.diff.toFixed(0) + '%';
+         s2.style.color = cssv(r.diff >= 0 ? '--good' : '--crit');
+         s2.style.fontWeight = '620';
+         return s2; } },
+     { label: 'Past seasons', get: r => r.n }],
+    rows,
+    { caption: 'Compared at the same week of the season, against completed seasons '
+             + 'observed from the start of the run. Weekly figures are preliminary.' });
+}
+
 function renderProgress() {
   const card = $('card-progress');
   if (!W) { card.classList.add('hidden'); return; }
