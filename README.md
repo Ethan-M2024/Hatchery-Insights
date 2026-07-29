@@ -211,6 +211,12 @@ WDFW's reports, not of this extraction:
   straight line nor normal errors. Sen's slope gives the magnitude. Results are banded
   honestly: p<0.01, p<0.05, and p<0.10 shown as *weak* rather than dressed up as
   significant.
+- **Run-timing curves** are indexed by calendar week of the March-to-March season, so
+  a week on the axis is the date it claims to be. An earlier version indexed weeks from
+  the date each run was *detected*, which drifts by months between species — that put
+  the coho median in late May instead of late October. Seasons whose run was not
+  observed from the beginning are excluded, and the axis extends as far as the species
+  actually runs (coho finish in November; winter steelhead are still arriving in May).
 - **Run-timing shift** measures the date by which half a season's fish had arrived,
   anchored to 1 March so runs crossing the new year stay comparable — calendar
   day-of-year would read 20 Dec → 5 Jan as a 349-day swing. Seasons not observed from

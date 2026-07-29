@@ -309,9 +309,15 @@ def build_weekly(annual_totals=None):
         mid = run['start'] + datetime.timedelta(days=med * 7)
         season = mid.year if mid.month >= SEASON_START_MONTH else mid.year - 1
         run['season'] = season
+        anchor = datetime.date(season, SEASON_START_MONTH, 1)
+        # Index the curve by the calendar week of the season, not by weeks since this
+        # run happened to be detected. The detected start drifts by months between
+        # species and seasons, so indexing from it puts an October fish in May.
         prev = bysp[(run['grp'], season)]
-        for w, v in wks.items():
-            prev[w] = max(prev.get(w, 0), v)
+        for d, total in run['dates'].items():
+            w = (d - anchor).days // 7
+            if 0 <= w <= 75:
+                prev[w] = max(prev.get(w, 0), total)
 
     sps = sorted({k[0] for k in bysp})
     out = []
@@ -323,10 +329,11 @@ def build_weekly(annual_totals=None):
         if run < 500 or len(series) < 12:   # partial or noise-level, not a run curve
             continue
         end_v = series[-1][1]
+        # week 0 is now 1 March of the season, so the median week converts straight
+        # to a calendar date with no reference to when the run was detected
         med_wk = next((w for w, v in series if v >= end_v * 0.5), series[0][0])
-        run_start = next((r['start'] for r in runs
-                          if r.get('season') == season and r['grp'] == grp), None)
-        med_date = (run_start + datetime.timedelta(days=med_wk * 7)) if run_start else None
+        med_date = datetime.date(season, SEASON_START_MONTH, 1) + \
+            datetime.timedelta(days=med_wk * 7)
         out.append({'sp': sps.index(grp), 'season': season, 'w': series,
                     'med': med_date.isoformat() if med_date else None,
                     # Days from 1 March of the season year to the median fish. Calendar
@@ -375,10 +382,10 @@ def build_weekly(annual_totals=None):
     for run in runs:
         if 'season' not in run:
             continue
-        last = max(run['wk']) if run['wk'] else 0
+        ds = sorted(run.get('dates') or {})
         windows[run['grp']].append(
-            (run['season'], run['start'],
-             run['start'] + datetime.timedelta(days=last * 7 + 6)))
+            (run['season'], ds[0] if ds else run['start'],
+             ds[-1] if ds else run['start']))
         if run.get('dates'):
             # the date a report was actually published, not start + 7n: WDFW posts on
             # Thursdays but skips weeks, so the arithmetic date can miss every report

@@ -1813,7 +1813,7 @@ const WEEK_LABEL = w => {
 function timingSeries() {
   if (!W) return [];
   /* a season still in progress has no meaningful "share of the season" yet */
-  return W.series.filter(s => s.sp === state.timingSp && s.done &&
+  return W.series.filter(s => s.sp === state.timingSp && s.done && s.from_start &&
     s.season >= state.from && s.season <= state.to);
 }
 
@@ -1828,8 +1828,13 @@ function renderTiming() {
     sel.addEventListener('change', () => { state.timingSp = +sel.value; renderAll(); });
   }
   const rows = timingSeries().sort((a, b) => a.season - b.season);
+  /* the axis follows the species rather than assuming a 52-week run: coho are done
+     by December, winter steelhead are still arriving the following May */
+  const lastWeek = rows.length
+    ? Math.min(75, Math.max(...rows.map(s => s.w[s.w.length - 1][0])))
+    : 52;
   const weeks = [];
-  for (let w = 0; w <= 52; w++) weeks.push(w);
+  for (let w = 0; w <= lastWeek; w++) weeks.push(w);
   const latest = rows.length ? rows[rows.length - 1].season : null;
 
   const series = rows.map(s => {
@@ -1856,9 +1861,11 @@ function renderTiming() {
     { name: 'earlier seasons in range', color: cssv('--ink-3') }
   ]);
   $('timing-note').textContent =
-    `Cumulative share of each season's adult ${W.species[state.timingSp]} count, by week of the ` +
-    `March-to-March season. Built from ${fmt(W.n_reports)} weekly in-season reports (2013 onward), ` +
-    `which are cumulative season-to-date and preliminary.`;
+    `Cumulative share of each season's adult ${W.species[state.timingSp]} count, by ` +
+    `calendar week of the March-to-March season. Built from ${fmt(W.n_reports)} weekly ` +
+    `in-season reports, which are cumulative season-to-date and preliminary. Seasons ` +
+    `whose run was not observed from the beginning are left out — the weekly archive ` +
+    `opens in January 2013, so that first partial season has no meaningful quartiles.`;
 
   renderTable($('t-timing'),
     [{ label: 'Season', left: true, get: r => r.name },
