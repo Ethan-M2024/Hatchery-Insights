@@ -10,7 +10,7 @@ WDFW posts a new weekly in-season report most Thursdays and one final annual rep
 year. This repository ships the already-extracted rows, so a fresh clone only has to
 fetch and read the reports published since the last commit — usually one PDF.
 """
-import argparse, csv, hashlib, json, os, re, sys, time, webbrowser
+import argparse, csv, hashlib, json, os, pathlib, re, sys, time, webbrowser
 import urllib.parse, urllib.request
 import multiprocessing as mp
 from datetime import datetime, timezone
@@ -171,6 +171,30 @@ def save_cache(cache):
         json.dump(cache, f)
 
 
+#: How many reports to read at once. Set by main(); see worker_count().
+JOBS = None
+
+
+def worker_count(requested=None):
+    """Decide how many PDFs to read in parallel.
+
+    Reading a report is pure CPU with no waiting, so a pool sized to every core pins
+    the whole machine for the length of the run. On a laptop that is worse than
+    impolite: it thermally throttles, so the run gets slower as well as making
+    everything else unusable. Leave two cores for the rest of the system and cap at
+    four, which is where the wall-clock gain has flattened out anyway.
+
+    --jobs (or the WDFW_JOBS environment variable) overrides this for a build machine
+    with nothing else to do.
+    """
+    if requested:
+        return max(1, requested)
+    env = os.environ.get('WDFW_JOBS', '')
+    if env.isdigit() and int(env) > 0:
+        return int(env)
+    return max(1, min(4, (os.cpu_count() or 4) - 2))
+
+
 def _weekly_job(path):
     import parse
     try:
@@ -253,9 +277,11 @@ def parse_weekly(cache, manifest, full=False):
             todo.append((name, p, sha))
 
     if todo:
-        say(f'reading {len(todo)} PDF(s)')
+        n_jobs = JOBS or worker_count()
+        say(f'reading {len(todo)} PDF(s) using {n_jobs} of '
+            f'{os.cpu_count() or "?"} cores')
         shas = {n: s for n, _, s in todo}
-        with mp.Pool(max(2, os.cpu_count() or 4), maxtasksperchild=25) as pool:
+        with mp.Pool(n_jobs, maxtasksperchild=25) as pool:
             for n, (name, rows) in enumerate(
                     pool.imap_unordered(_weekly_job, [t[1] for t in todo],
                                         chunksize=1), 1):
@@ -287,7 +313,10 @@ def parse_annual():
         say('annual PDFs are not held locally; reusing the extracted rows')
         return
     args = [(os.path.join(paths.ANNUAL_DIR, f), f.split('_')[0]) for f in files]
-    with mp.Pool(max(2, os.cpu_count() or 4)) as pool:
+    n_jobs = JOBS or worker_count()
+    say(f'reading {len(files)} annual report(s) using {n_jobs} of '
+        f'{os.cpu_count() or "?"} cores')
+    with mp.Pool(n_jobs) as pool:
         res = pool.map(pa.job, args)
     rows = [x for r in res for x in r if '__err__' not in x]
     for e in [x['__err__'] for r in res for x in r if '__err__' in x]:
@@ -312,7 +341,13 @@ def main(argv=None):
                     help='run the validation suite only, no network')
     ap.add_argument('--no-geo', action='store_true', help='skip the location refresh')
     ap.add_argument('--no-open', action='store_true', help='do not open a browser')
+    ap.add_argument('--jobs', type=int, metavar='N',
+                    help='how many reports to read at once '
+                         '(default: leave 2 cores free, cap at 4)')
     a = ap.parse_args(argv)
+
+    global JOBS
+    JOBS = worker_count(a.jobs)
 
     paths.ensure_dirs()
     t0 = time.time()
@@ -372,7 +407,9 @@ def main(argv=None):
 
     if not a.no_open and healthy:
         say(f'opening {paths.DASHBOARD}', '==')
-        webbrowser.open('file:///' + paths.DASHBOARD.replace(os.sep, '/').lstrip('/'))
+        # as_uri() percent-encodes spaces and '#', which hand-built file:/// strings
+        # do not — and a clone sitting in "C:\Users\Jo Smith\Downloads" has both
+        webbrowser.open(pathlib.Path(paths.DASHBOARD).resolve().as_uri())
     return 0 if healthy else 1
 
 

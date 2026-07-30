@@ -118,11 +118,30 @@ def norm_race(r):
     return RACE_FIX.get(key, (r or 'NA').strip() or 'NA')
 
 
+#: The same fish is spelled several ways across 28 seasons of reports — with and
+#: without a space, and run together. Fold them before matching, or the dashboard
+#: lists 'Whitefish' and 'White Fish Na' as two different species.
+SPELLING_FIX = [
+    (re.compile(r'\bWHITE\s+FISH\b', re.I), 'WHITEFISH'),
+    (re.compile(r'\bBLACKCRAPPIE\b', re.I), 'BLACK CRAPPIE'),
+    (re.compile(r'\bPIKE\s+MINNOW\b', re.I), 'PIKEMINNOW'),
+]
+
+#: A race token left dangling on a species string whose group we did not recognise.
+#: Without stripping it the fallback keeps it in the name and invents a species
+#: called 'Largemouth Bass Na'.
+TRAILING_RACE = re.compile(
+    r'[\s:]+(NA|GENERAL|SPRING|SUMMER|FALL|WINTER|LATE|SEA-?RUN|RESIDENT|'
+    r'ANADROMOUS|COASTAL|EVEN\s+YEAR|ODD\s+YEAR)\s*$', re.I)
+
+
 def norm_species(s):
     """'Chinook Fall' / 'FALL CHINOOK SALMON' / 'Chinook / Fall' -> (group, race)."""
     if not s:
         return ('Unknown', 'NA')
     t = re.sub(r'\s+', ' ', s.strip())
+    for pat, repl in SPELLING_FIX:
+        t = pat.sub(repl, t)
     t = re.sub(r'\bCont\.?$', '', t, flags=re.I).strip()
     t = re.sub(r'\bSALMON\b|\bTROUT\b(?! )', '', t, flags=re.I).strip()
     t = t.replace('/', ' ').strip()
@@ -138,7 +157,10 @@ def norm_species(s):
         grp = {'brown': 'Brown Trout', 'rainbow': 'Rainbow', 'cutthroat': 'Cutthroat',
                'brook': 'Brook Trout', 'lake trout': 'Lake Trout'}.get(g, g.title())
     else:
-        grp = t.title() or 'Unknown'
+        # an unrecognised group: drop any race token before naming it, so the
+        # species list carries 'Largemouth Bass', not 'Largemouth Bass Na'
+        stem = TRAILING_RACE.sub('', t).strip(' :-')
+        grp = stem.title() or 'Unknown'
     race = re.sub(re.escape(g), '', tl, flags=re.I).strip().title() if g else ''
     race = re.sub(r'\s+', ' ', race).strip(' -') or 'NA'
     return (grp, race)

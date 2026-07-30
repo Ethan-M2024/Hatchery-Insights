@@ -1,35 +1,62 @@
 # WDFW Hatchery Escapement Dashboard
 
 Every salmon and steelhead counted back to a Washington state hatchery rack or trap,
-**1998–99 through 2024–25**, pulled out of WDFW's PDF reports and turned into
+**1998–99 through the present**, pulled out of WDFW's PDF reports and turned into
 something you can actually explore, print and export.
 
 **[▶ Open the live dashboard](https://ethan-m2024.github.io/wdfw-hatchery-escapement/)**
 
-Built from 27 annual *Final Hatchery Escapement Reports* and 705 weekly in-season
-reports — 9,788 facility records and 166,769 weekly observations. Every number
-reconciles against WDFW's own published totals; see [Accuracy](#accuracy).
+Built from every annual *Final Hatchery Escapement Report* and every weekly in-season
+report WDFW publishes — around ten thousand facility records and well over a hundred
+thousand weekly observations, refreshed daily. Every number reconciles against WDFW's
+own published totals; see [Accuracy](#accuracy).
 
 ---
 
-## Just open it
+## One command
 
-You do **not** need Python, an internet connection, or any setup to look at the data.
+Same command on macOS and Windows, whichever you prefer:
 
-1. Click the green **Code** button above → **Download ZIP**
-2. Unzip it
-3. Double-click **`Open Dashboard (Mac).command`** or **`Open Dashboard (Windows).bat`**
+```
+python3 run.py              # macOS / Linux — open the dashboard
+py run.py                   # Windows — open the dashboard
 
-That opens the dashboard in your browser with all 27 seasons already in it.
-(Or just open `docs/index.html` directly — it is one self-contained file you can
-email, put on a shared drive, or keep on a USB stick.)
+python3 run.py --update     # fetch the newest WDFW reports, rebuild, then open
+python3 run.py --check      # re-run the accuracy audit on the data already here
+python3 run.py --help       # every option
+```
+
+Opening needs **no install and no internet**. The built page ships in this
+repository and carries its own data. Only `--update` needs the PDF libraries, and
+`run.py` sets those up by itself the first time you ask for it, in a private `.venv`
+that touches nothing else on your machine.
+
+If you would rather not use a terminal, double-click instead:
+
+| | macOS | Windows |
+|---|---|---|
+| **Just look at it** | `Open Dashboard (Mac).command` | `Open Dashboard (Windows).bat` |
+| **Pull in new reports** | `Update Dashboard (Mac).command` | `Update Dashboard (Windows).bat` |
+
+The buttons run exactly the same code as the command line, so neither can drift from
+the other.
+
+You can also open `docs/index.html` directly — it is one self-contained file you can
+email, put on a shared drive, or keep on a USB stick.
+
+### It will not take over your machine
+
+Reading PDFs is pure CPU work. By default the updater leaves two cores free and never
+uses more than four, so your laptop stays usable and does not thermally throttle. On a
+build machine with nothing else to do, `--jobs 8` lifts the cap.
 
 ## Update it with the newest reports
 
-WDFW posts a new weekly report most Thursdays. To pull them in:
+WDFW posts a new weekly report most Thursdays. `python3 run.py --update` pulls them
+in, or double-click:
 
-**Mac** — double-click **`Update Dashboard (Mac).command`**
-**Windows** — double-click **`Update Dashboard (Windows).bat`**
+**Mac** — **`Update Dashboard (Mac).command`**
+**Windows** — **`Update Dashboard (Windows).bat`**
 
 The first run sets up a private Python environment for you (about a minute). After
 that an update takes **under a minute**, because the repository already contains

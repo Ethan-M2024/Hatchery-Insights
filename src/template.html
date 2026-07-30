@@ -748,7 +748,7 @@ code { font-family: var(--mono); font-size: .92em; }
       <div class="card-head">
         <div>
           <h2>Eggs per spawner</h2>
-          <p class="note">Egg take divided by fish spawned — a proxy for fecundity, and so for body size and age structure.</p>
+          <p class="note">Egg take divided by every fish spawned, males included — so it lands near half of published per-female fecundity (Chinook read about 2,000 here against a literature value near 4,500). The level is not a fecundity estimate; the movement in it tracks body size and age structure.</p>
         </div>
         <button class="tbl-toggle" data-table="t-eps">Table</button>
       </div>
@@ -2174,7 +2174,7 @@ $('data-csv').addEventListener('click', () => {
   const head = ['season', 'facility', 'stock', 'species', 'run', 'origin', 'adults', 'jacks',
                 'adults_received', 'jacks_received', 'eggtake', 'eggtake_goal',
                 'adults_released', 'jacks_released', 'adults_net', 'jacks_net', 'region'];
-  const esc = v => /[",\n]/.test(v) ? '"' + String(v).replace(/"/g, '""') + '"' : v;
+  const esc = csvCell;
   const lines = [head.join(',')];
   for (const r of dataRows) {
     lines.push([
@@ -2330,6 +2330,26 @@ const xmlEsc = s => String(s == null ? '' : s)
      make Excel and Word declare the file corrupt */
   .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
   .replace(/[\uD800-\uDFFF]/g, '');
+
+/* One CSV cell, safe to open in Excel, LibreOffice or Sheets.
+
+   A spreadsheet treats a cell beginning with = + - @ (or a tab/CR) as a formula, so
+   a name carried through from a source PDF could execute on open — the DDE variant
+   of that trick runs a shell command. Facility and stock names here come from a
+   document we do not control, so any text cell that starts with a trigger gets a
+   leading apostrophe, which spreadsheets strip on display and never evaluate.
+
+   Numbers are emitted untouched: a negative number is not a formula, and quoting or
+   prefixing it would turn the column into text and break every downstream sum. */
+function csvCell(v) {
+  if (v == null) return '';
+  if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+  let s = String(v);
+  // exempt only a string that is *entirely* a number: '-1234' is data and must stay
+  // numeric, but '-2+3' starts with a digit and is still a formula Excel will evaluate
+  if (/^[=+\-@\t\r]/.test(s) && !/^-?\d+(\.\d+)?$/.test(s)) s = "'" + s;
+  return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
 
 function colRef(n) {           // 0 -> A, 26 -> AA
   let s = '';
@@ -2814,8 +2834,7 @@ const fileStem = () => `wdfw-escapement-${state.expScope}-${state.from}-${state.
 
 function exportCSV() {
   const t = tableFor(state.expScope);
-  const esc = v => (v == null) ? '' :
-    /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g, '""') + '"' : String(v);
+  const esc = csvCell;
   const lines = [t.columns.map(c => esc(c.label)).join(',')];
   for (const r of t.rows) lines.push(r.map(esc).join(','));
   saveBlob(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }),
@@ -3782,7 +3801,24 @@ function renderProgress() {
 /* ===================================================================
    Brood-year productivity — eggs in, adults out
    =================================================================== */
-const BROOD_LAGS = [3, 4, 5];
+/* Age at return is a property of the species, not a constant.
+
+   Pink salmon have an invariant two-year life cycle: no pink returns in its third,
+   fourth or fifth year. Reading returns at 3, 4 and 5 for pink therefore samples
+   three unrelated cohorts — and because Washington pink runs are odd-year dominant,
+   two of those lags land on odd years and one on a near-empty even year, so the
+   result is not merely imprecise, it describes a fish that does not exist. Coho are
+   overwhelmingly age-3, and sockeye and steelhead return later than Chinook. */
+const BROOD_LAGS_BY_SP = {
+  Chinook:   [3, 4, 5],
+  Coho:      [2, 3],
+  Chum:      [3, 4, 5],
+  Sockeye:   [4, 5],
+  Pink:      [2],
+  Steelhead: [4, 5],
+};
+const DEFAULT_BROOD_LAGS = [3, 4, 5];
+const broodLags = spName => BROOD_LAGS_BY_SP[spName] || DEFAULT_BROOD_LAGS;
 
 function renderBrood(years) {
   const sel = $('brood-species');
@@ -3794,6 +3830,7 @@ function renderBrood(years) {
     sel.addEventListener('change', () => { state.broodSp = +sel.value; renderAll(); });
   }
   const sp = state.broodSp ?? +sel.options[0].value;
+  const LAGS = broodLags(A.species[sp]);
   const eggs = new Map(), adults = new Map();
   for (const r of rowsInScope()) {
     if (r[C.sp] !== sp) continue;
@@ -3805,11 +3842,11 @@ function renderBrood(years) {
   const rows = ys.map(y => {
     const e = eggs.get(y) || 0;
     const back = {};
-    for (const L of BROOD_LAGS) back[L] = adults.get(y + L) ?? null;
-    const known = BROOD_LAGS.filter(L => back[L] != null);
+    for (const L of LAGS) back[L] = adults.get(y + L) ?? null;
+    const known = LAGS.filter(L => back[L] != null);
     const total = known.reduce((a, L) => a + back[L], 0);
-    return { y, eggs: e, back, total: known.length === BROOD_LAGS.length ? total : null,
-             perM: e && known.length === BROOD_LAGS.length ? total / (e / 1e6) : null };
+    return { y, eggs: e, back, total: known.length === LAGS.length ? total : null,
+             perM: e && known.length === LAGS.length ? total / (e / 1e6) : null };
   }).filter(r => r.eggs > 0);
 
   const withRate = rows.filter(r => r.perM != null);
@@ -3823,17 +3860,23 @@ function renderBrood(years) {
                                color: colorOf(sp) }]);
   const mean = withRate.length
     ? withRate.reduce((a, r) => a + r.perM, 0) / withRate.length : 0;
+  const ageWords = LAGS.length === 1 ? `${LAGS[0]} years later`
+    : `${LAGS.slice(0, -1).join(', ')} and ${LAGS[LAGS.length - 1]} years later, summed`;
   $('brood-note').textContent =
     `${A.species[sp]}: egg take in one season against the adults that returned `
-    + `${BROOD_LAGS.join(', ')} years later, summed. Averaging `
-    + `${fmt(Math.round(mean))} adults per million eggs across `
-    + `${withRate.length} complete brood years. This is a return-per-egg measure, not a `
-    + `true survival rate — it cannot see how many of those eggs were released, nor `
-    + `which returning fish came from which hatchery.`;
+    + `${ageWords} — the ages ${A.species[sp].toLowerCase()} actually comes back at. `
+    + `Averaging ${fmt(Math.round(mean))} adults per million eggs across `
+    + `${withRate.length} complete brood years. This is a return-per-egg index, not a `
+    + `survival rate: it cannot see how many of those eggs became released juveniles, `
+    + `nor which returning fish came from which hatchery`
+    + (LAGS.length > 1
+        ? `, and because a single return season falls inside the window of ${LAGS.length} `
+          + `brood years, those windows overlap — read the trend, not the level.`
+        : `.`);
   renderTable($('t-brood'),
     [{ label: 'Brood season', left: true, get: r => season(r.y) },
      { label: 'Egg take', get: r => fmt(r.eggs) },
-     ...BROOD_LAGS.map(L => ({ label: `Adults +${L} yr`,
+     ...LAGS.map(L => ({ label: `Adults +${L} yr`,
        get: r => r.back[L] == null ? '—' : fmt(r.back[L]) })),
      { label: 'Total returned', get: r => r.total == null ? '—' : fmt(r.total) },
      { label: 'Per million eggs', get: r => r.perM == null ? '—' : fmt(Math.round(r.perM)) }],
@@ -3866,7 +3909,7 @@ function renderStockMatrix() {
     const fa = A.facilities[r[C.fac]];
     const v = r[C.adults];
     if (!v) continue;
-    cell.set(fa + ' ' + st, (cell.get(fa + ' ' + st) || 0) + v);
+    cell.set(fa + '\u0000' + st, (cell.get(fa + '\u0000' + st) || 0) + v);
     facTot.set(fa, (facTot.get(fa) || 0) + v);
     stkTot.set(st, (stkTot.get(st) || 0) + v);
   }
@@ -3902,7 +3945,7 @@ function renderStockMatrix() {
     el('text', { class: 'tick', x: m.l - 8, y: m.t + y * chh + chh / 2 + 4,
                  'text-anchor': 'end' }, svg).textContent = st.slice(0, 30);
     facs.forEach((f, x) => {
-      const v = cell.get(f + ' ' + st) || 0;
+      const v = cell.get(f + '\u0000' + st) || 0;
       const rect = el('rect', { x: m.l + x * cw + 1, y: m.t + y * chh + 1,
         width: cw - 2, height: chh - 2, rx: 3,
         fill: v ? shade(v) : 'var(--surface-2)' }, svg);
@@ -3927,7 +3970,7 @@ function renderStockMatrix() {
      { label: 'Adults', get: r => fmt(r.v) },
      { label: 'Where', left: true, get: r => r.where }],
     stks.map(st => {
-      const at = facs.filter(f => cell.get(f + ' ' + st));
+      const at = facs.filter(f => cell.get(f + '\u0000' + st));
       return { st, n: at.length, v: stkTot.get(st),
                where: at.slice(0, 4).join(', ') +
                       (at.length > 4 ? ' +' + (at.length - 4) : '') };
@@ -4133,6 +4176,11 @@ function renderFacProfile(fac, rows, years) {
 
   const adults = mine.reduce((a, r) => a + r[C.adults], 0);
   const eggs = mine.reduce((a, r) => a + r[C.eggtake], 0);
+  /* Broodstock trucked in from another rack. Without this, a station like Kalama
+     Falls reads "308 adults, 7.7M eggs" — about 25,000 eggs per fish, some five
+     times what a Chinook female carries — because the fish that produced those eggs
+     were received, not trapped here. */
+  const rcv = mine.reduce((a, r) => a + r[C.adults_rcv], 0);
   const ys = [...new Set(mine.map(r => r[C.year]))].sort((a, b) => a - b);
   const spTot = new Map();
   for (const r of mine) spTot.set(r[C.sp], (spTot.get(r[C.sp]) || 0) + r[C.adults]);
@@ -4189,7 +4237,13 @@ function renderFacProfile(fac, rows, years) {
   add('Adults handled', compact(adults),
       ys.length + ' season' + (ys.length > 1 ? 's' : '') + ', ' +
       season(ys[0]) + ' to ' + season(ys[ys.length - 1]));
-  add('Egg take', compact(eggs), fmt(eggs) + ' eggs');
+  if (rcv > 0)
+    add('Broodstock received', compact(rcv),
+        'trucked in from another rack, on top of the fish trapped here');
+  add('Egg take', compact(eggs),
+      eggs && (adults + rcv) > 0
+        ? fmt(Math.round(eggs / (adults + rcv))) + ' per fish handled, trapped and received'
+        : fmt(eggs) + ' eggs');
   add('Runs handled', String(sps.length),
       sps.slice(0, 3).map(e => A.species[e[0]]).join(', ') +
       (sps.length > 3 ? ' +' + (sps.length - 3) : ''));

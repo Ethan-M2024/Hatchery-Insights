@@ -38,8 +38,11 @@ jobs:
       - name: Install pinned dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --require-hashes -r requirements.lock.txt \
-            || pip install -r requirements.txt
+          # No fallback. An earlier version fell back to the unpinned
+          # requirements.txt when this failed, which quietly turned off the
+          # SHA-256 verification on the one job that runs unattended every day.
+          # A failure here must stop the run, not downgrade its guarantees.
+          pip install --require-hashes -r requirements.lock.txt
 
       - name: Fetch new reports, rebuild and validate
         run: python src/pipeline.py --no-open

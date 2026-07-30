@@ -208,3 +208,52 @@ more than anything in this codebase.
 
 Open a private security advisory under the repository's **Security** tab rather than
 a public issue.
+
+
+---
+
+## Second audit — 30 July 2026
+
+A full re-read of the repository after the analytical features landed. Two security
+findings, both fixed and verified.
+
+### CSV formula injection in the exports — medium
+
+Every export path built CSV by quoting commas and nothing else. A spreadsheet treats a
+cell beginning `=`, `+`, `-` or `@` as a formula, and the DDE form of that trick runs a
+shell command on open. Facility and stock names come from PDFs published by someone
+else, so a tampered report could have put a live formula into a file you then forward
+to a colleague — the payload executes on their machine, not the one that downloaded it.
+
+Fixed with a single `csvCell()` used by both exporters. Text starting with a trigger
+gets a leading apostrophe, which spreadsheets strip on display and never evaluate.
+
+Getting the exemption right took two passes. The first version exempted anything
+*starting* with a digit so negative numbers stayed numeric — but `-2+3` starts with a
+digit and Excel still evaluates it. The guard now exempts only strings that are
+entirely a number. Verified across eleven cases with zero misclassifications:
+`=cmd|'/c calc'!A1`, `+1+1`, `-2+3`, `@SUM(A1)` and a leading tab are all neutralised,
+while `-1234`, `-12.5`, `1998-99` and `Kalama-Falls` pass through untouched.
+
+### The daily job could silently drop hash verification — medium
+
+`refresh.yml` installed from the hash-locked file and fell back to the unpinned
+`requirements.txt` on any failure:
+
+```yaml
+pip install --require-hashes -r requirements.lock.txt \
+  || pip install -r requirements.txt
+```
+
+A registry hiccup, a network blip, or an attacker able to fail one request would have
+turned off SHA-256 verification on the one job that runs unattended every day, with a
+green tick either way. That is precisely the job where a supply-chain substitution
+would go unnoticed longest. The fallback is gone: a failure now stops the run.
+
+### Re-verified clean
+
+No secrets, tokens or local paths in the tree or in git history. No `eval`,
+`innerHTML`, `document.write`, `subprocess` or `pickle`. Nothing stored in the browser.
+Workflow permissions are `contents: write` with no `pull_request_target`, so no fork
+can run code against the token. All eight pinned dependencies still carry zero known
+CVEs.
