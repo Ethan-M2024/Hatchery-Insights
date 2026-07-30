@@ -1892,6 +1892,14 @@ function renderTiming() {
     /* a run type is the unit that actually has a timing; the combined species is
        kept because it is what the annual reports total, but it is listed second */
     const usable = new Set(W.series.filter(s => s.done && s.from_start).map(s => s.sp));
+    /* How many seasons each option can actually chart. A combined species often
+       charts far fewer than its own run types: summer and winter steelhead start
+       months apart, so the combined series is usually already part-counted by the
+       time its season boundary shows up, and those seasons cannot carry a median.
+       Saying so in the list stops anyone picking a near-empty option to find out. */
+    const nSeasons = new Map();
+    for (const s of W.series)
+      if (s.done && s.from_start) nSeasons.set(s.sp, (nSeasons.get(s.sp) || 0) + 1);
     const groups = new Map();
     W.species.forEach((n, i) => {
       const [g, race] = n.split(' \u00b7 ');
@@ -1916,7 +1924,10 @@ function renderTiming() {
         /* say in the list which runs have a season in progress, so nobody has to
            click through thirty options to find the three that do */
         const live = LIVE_RUNS.has(i);
-        og.appendChild(new Option(label + (live ? '  · under way' : ''), i));
+        const n = nSeasons.get(i) || 0;
+        og.appendChild(new Option(
+          `${label}  · ${n} season${n === 1 ? '' : 's'}`
+          + (live ? '  · under way' : ''), i));
       }
       sel.appendChild(og);
     }
