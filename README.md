@@ -1,4 +1,4 @@
-# Hatchery Insights
+# Washington Hatchery Escapement Report Insights
 
 Every salmon and steelhead counted back to a Washington state hatchery rack or trap,
 **starting from the 1998–99 season and running to the present**, pulled out of WDFW's
