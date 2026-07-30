@@ -405,6 +405,16 @@ def main(argv=None):
     with open(paths.RUN_LOG, 'w', encoding='utf-8') as f:
         f.write('\n'.join(LOG) + '\n')
 
+    # The share card carries figures, so it is regenerated whenever they change.
+    # It needs a browser, which a plain clone will not have, so a failure here is
+    # reported and moved past rather than allowed to fail the run.
+    try:
+        import preview_card
+        preview_card.main()
+    except Exception as e:
+        say(f'link preview not regenerated ({type(e).__name__}); '
+            f'run "python src/preview_card.py" if you need it')
+
     if not a.no_open and healthy:
         say(f'opening {paths.DASHBOARD}', '==')
         # as_uri() percent-encodes spaces and '#', which hand-built file:/// strings
