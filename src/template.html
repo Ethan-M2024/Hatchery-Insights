@@ -636,7 +636,7 @@ code { font-family: var(--mono); font-size: .92em; }
     <div class="card-head">
       <div>
         <h2>Runs under way right now</h2>
-        <p class="note" id="live-note">Only some runs are in the water at any time of year, so only those can be tracked against a season in progress.</p>
+        <p class="note" id="live-note"></p>
       </div>
     </div>
     <div class="tbl-wrap" id="t-live"></div>
@@ -675,7 +675,7 @@ code { font-family: var(--mono); font-size: .92em; }
     <div class="card-head">
       <div>
         <h2>Timing of the median fish</h2>
-        <p class="note">Week by which half the season's adults had been counted. A later point means a later run.</p>
+        <p class="note" id="median-note">Week by which half the season's adults had been counted. A later point means a later run.</p>
       </div>
       <button class="tbl-toggle" data-table="t-median">Table</button>
     </div>
@@ -1999,8 +1999,14 @@ const crossLabel = (s, pct) => { const w = crossWeek(s, pct); return w == null ?
 
 function renderMedian() {
   if (!W) return;
+  /* Scoped to whichever run is selected above, like every other card on this tab.
+     One run's median across its seasons answers "is this run drifting later?",
+     which is the question the card is for; a grid of every species answered a
+     different one and ignored the selector entirely. */
+  const only = state.timingSp;
   const bySp = new Map();
   for (const s of W.series) {
+    if (s.sp !== only) continue;
     if (!s.done || !s.from_start || s.season < state.from || s.season > state.to) continue;
     const end = s.w[s.w.length - 1][1] || 1;
     let med = null;
@@ -2009,36 +2015,57 @@ function renderMedian() {
     if (!bySp.has(s.sp)) bySp.set(s.sp, new Map());
     bySp.get(s.sp).set(s.season, med);
   }
-  const seasons = [...new Set(W.series.filter(s => s.done && s.from_start)
+  const seasons = [...new Set(W.series.filter(s => s.sp === only && s.done && s.from_start)
                                .map(s => s.season))]
     .filter(y => y >= state.from && y <= state.to).sort((a, b) => a - b);
-  const wanted = [...bySp.keys()]
-    .filter(sp => {
-      const n = W.species[sp], g = n.split(' \u00b7 ')[0];
-      if (!PRIMARY.includes(g)) return false;
-      return n.includes('\u00b7') || !W.species.some(m => m.startsWith(g + ' \u00b7'));
-    })
-    .sort((a, b) => W.species[a].localeCompare(W.species[b]));
-  const series = wanted.map(sp => {
-    const gsp = A.species.indexOf(W.species[sp].split(' \u00b7 ')[0]);
-    return {
-      name: W.species[sp].replace(' \u00b7 ', ' — '),
-      color: gsp >= 0 ? colorOf(gsp) : cssv('--ink-3'),
-      values: seasons.map(y => bySp.get(sp).get(y) ?? null)
-    };
-  });
-  if (series.length > 4) series.forEach(s => s.label = false);
+  const runName = (W.species[only] || '').replace(' \u00b7 ', ' — ');
+  const gsp = A.species.indexOf((W.species[only] || '').split(' \u00b7 ')[0]);
+  const series = bySp.has(only) ? [{
+    name: runName,
+    color: gsp >= 0 ? colorOf(gsp) : cssv('--ink-3'),
+    values: seasons.map(y => bySp.get(only).get(y) ?? null)
+  }] : [];
+  /* One run's median moves within a few weeks, so an axis running from the start of
+     the season would flatten it against the top. Week zero is 1 March, which carries
+     no meaning for an arrival date, so the axis zooms to the data instead.
+
+     The window never closes below MIN_SPAN weeks: without that floor a run that is
+     genuinely steady from year to year would be stretched to fill the panel and read
+     as violent swings. */
+  const MIN_SPAN = 6;
+  const vals = series.length ? series[0].values.filter(v => v != null) : [];
+  let yMin = 0, yMaxForce = null, yTicks = null;
+  if (vals.length) {
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    const pad = Math.max(1, (hi - lo) * 0.2);
+    lo -= pad; hi += pad;
+    if (hi - lo < MIN_SPAN) {
+      const mid = (lo + hi) / 2;
+      lo = mid - MIN_SPAN / 2; hi = mid + MIN_SPAN / 2;
+    }
+    yMin = Math.max(0, Math.floor(lo));
+    yMaxForce = Math.min(75, Math.ceil(hi));
+    const step = (yMaxForce - yMin) / 4;
+    yTicks = [0, 1, 2, 3, 4].map(i => Math.round(yMin + i * step));
+  }
   lineChart($('c-median'), {
-    xs: seasons, series, xLabel: season,
+    xs: seasons, series, xLabel: season, yMin, yMaxForce, yTicks,
     yFmt: v => WEEK_LABEL(Math.round(v)),
     valFmt: v => WEEK_LABEL(Math.round(v))
   });
   renderLegend($('l-median'), series.map(s => ({ name: s.name, color: s.color })));
+  $('median-note').textContent = vals.length
+    ? `Week by which half the season's ${runName} adults had been counted, across `
+      + `${vals.length} season${vals.length > 1 ? 's' : ''}. A higher point means a later `
+      + `run. The axis is zoomed to this run, so read the spread against the labels.`
+    : `No completed season of ${runName} was observed from the start of the run, so no `
+      + `median can be placed.`;
   renderTable($('t-median'),
     [{ label: 'Season', left: true, get: r => season(r.y) },
      ...series.map(s => ({ label: s.name, get: r => s.values[r.i] == null ? '—' : WEEK_LABEL(s.values[r.i]) }))],
     seasons.map((y, i) => ({ y, i })),
-    { caption: 'Week by which half the season-to-date adult count had been reached.' });
+    { caption: `Week by which half the season-to-date adult count had been reached, `
+             + `${runName}.` });
 }
 
 /* ===================== egg take ===================== */
@@ -3622,10 +3649,8 @@ function renderLiveRuns() {
   card.classList.remove('hidden');
   rows.sort((a, b) => b.now - a.now);
   $('live-note').textContent =
-    `${rows.length} run${rows.length > 1 ? 's are' : ' is'} in the water in `
-    + `${season(LIVE_YEAR)} as of the report of ${(RAW.meta || {}).latest_report || ''}. `
-    + `The rest of the year's runs have either finished or not started — coho, chum and `
-    + `sockeye return in autumn, so in midsummer there is nothing yet to track.`;
+    `${season(LIVE_YEAR)}, as of the report of `
+    + `${(RAW.meta || {}).latest_report || ''}.`;
   renderTable($('t-live'),
     [{ label: 'Run', left: true, get: r => r.name },
      { label: 'Counted so far', get: r => fmt(r.now) },
