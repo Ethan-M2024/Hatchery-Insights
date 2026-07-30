@@ -32,7 +32,7 @@ def opt(v):
 # ---------- facility name normalisation across eras ----------
 # The 1998-99 and 1999-2000 reports use short title-case names ("Kendall Creek");
 # every later report uses the Adult Report Database form ("KENDALL CR HATCHERY").
-# Strip the facility-type suffix from both so the same site joins across 27 seasons.
+# Strip the facility-type suffix from both so the same site joins across every season.
 TYPE_WORD = re.compile(
     r'\b(HATCHERY|HATCHRY|HATCH|PONDS?|REARING|REARIN|TRAP|FCF|SALMON)\b')
 
@@ -118,7 +118,7 @@ def norm_race(r):
     return RACE_FIX.get(key, (r or 'NA').strip() or 'NA')
 
 
-#: The same fish is spelled several ways across 28 seasons of reports — with and
+#: The same fish is spelled several ways across the run of reports — with and
 #: without a space, and run together. Fold them before matching, or the dashboard
 #: lists 'Whitefish' and 'White Fish Na' as two different species.
 SPELLING_FIX = [
@@ -783,7 +783,7 @@ def main():
     # that finds nothing new produces a byte-identical payload.
     data['meta'] = {
         'source': 'https://wdfw.wa.gov/fishing/management/hatcheries/escapement',
-        'repo': 'https://github.com/Ethan-M2024/wdfw-hatchery-escapement',
+        'repo': 'https://github.com/Ethan-M2024/Hatchery-Insights',
         'seasons': sorted({r[0] for r in data['annual']['rows']}),
         'latest_fetch': (fetched[-1] if fetched else None),
         'latest_report': latest_weekly_report_date(),

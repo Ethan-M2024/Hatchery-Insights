@@ -1,6 +1,6 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; font-src data:; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
-<title>WDFW Hatchery Escapement, 1998–2025</title>
+<title>Hatchery Insights — Washington hatchery returns since 1998</title>
 
 <style>
 :root {
@@ -426,7 +426,7 @@ code { font-family: var(--mono); font-size: .92em; }
       <div class="sub" id="hero-sub">—</div>
     </div>
     <div class="hero-spark"><svg class="plot" id="hero-spark" height="118" role="img"
-      aria-label="Total adult escapement by season, 1998-99 to 2024-25"></svg></div>
+      aria-label="Total adult escapement by season, every season on record"></svg></div>
   </div>
 </header>
 
@@ -965,7 +965,7 @@ code { font-family: var(--mono); font-size: .92em; }
 </section>
 
 <footer class="foot">
-  <div><strong>Source.</strong> WDFW <a href="https://wdfw.wa.gov/fishing/management/hatcheries/escapement" target="_blank" rel="noopener">Hatchery Escapement Reports</a> — 27 annual PDFs plus the weekly in-season series. Parsed values were checked against every published statewide total in the annual reports; all <span id="recon-n">562</span> reconcile exactly.</div>
+  <div><strong>Source.</strong> WDFW <a href="https://wdfw.wa.gov/fishing/management/hatcheries/escapement" target="_blank" rel="noopener">Hatchery Escapement Reports</a> — every annual report published since 1998, plus the weekly in-season series. Parsed values were checked against every published statewide total in the annual reports; all <span id="recon-n">562</span> reconcile exactly.</div>
   <div><strong>Reading these numbers.</strong> Escapement here means fish returning to a hatchery rack or trap — not the total run to a river. Fish that spawn below the rack, are caught, or pass an idle trap are not counted. Weekly figures are preliminary in-season estimates; annual figures are final.</div>
   <div><strong>Joins.</strong> The 1998–99 and 1999–2000 reports use shorter facility names than later years; those are matched to the modern names where unambiguous, and names that the WDFW GIS layer resolves to one physical site are folded together so a hatchery's history is continuous. Egg-take goals are absent (<code>NA</code>) on many rows and are excluded from attainment rather than treated as zero.</div>
   <div><strong>Locations.</strong> Coordinates, county, WRIA and waterbody come from the WDFW <em>HatcheryLikeFacilities</em> GIS layer (WGS84), joined to the escapement records by facility name.</div>
@@ -3349,7 +3349,7 @@ function renderTrends(years) {
     rowsMK,
     { caption: 'Mann-Kendall on adults trapped per season, final reports only. '
              + 'Rank-based, so it assumes neither a straight line nor normal errors. '
-             + 'p below 0.05 is conventionally called significant; with ~27 points '
+             + 'p below 0.05 is conventionally called significant; on a record this length '
              + 'a real trend has to be substantial to clear it.' });
 
   /* ---------- anomaly against the trailing ten-season mean ---------- */

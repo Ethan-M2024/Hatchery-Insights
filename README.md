@@ -1,15 +1,21 @@
-# WDFW Hatchery Escapement Dashboard
+# Hatchery Insights
 
 Every salmon and steelhead counted back to a Washington state hatchery rack or trap,
-**1998–99 through the present**, pulled out of WDFW's PDF reports and turned into
-something you can actually explore, print and export.
+**starting from the 1998–99 season and running to the present**, pulled out of WDFW's
+PDF reports and turned into something you can actually explore, print and export.
 
-**[▶ Open the live dashboard](https://ethan-m2024.github.io/wdfw-hatchery-escapement/)**
+**[▶ Open the live dashboard](https://ethan-m2024.github.io/Hatchery-Insights/)**
 
-Built from every annual *Final Hatchery Escapement Report* and every weekly in-season
-report WDFW publishes — around ten thousand facility records and well over a hundred
-thousand weekly observations, refreshed daily. Every number reconciles against WDFW's
-own published totals; see [Accuracy](#accuracy).
+Washington publishes this record as PDFs: one *Final Hatchery Escapement Report* a year,
+and a new in-season report most Thursdays. Read one at a time they answer a single
+question each. Read together, back to 1998, they show which runs are recovering and which
+are not, when fish arrive and whether that is shifting, what happens to them at the rack,
+and how any one hatchery compares with the rest of the state.
+
+This repository holds every one of those reports, parsed and reconciled, and rebuilds
+itself daily as WDFW publishes more. Nothing is hand-entered and no figure is estimated:
+every number traces to a published report, and each one is checked against WDFW's own
+totals before it ships. See [Accuracy](#accuracy).
 
 ---
 
@@ -118,7 +124,7 @@ it directly — no clone, no build, no key:
 
 ```python
 import pandas as pd
-BASE = "https://raw.githubusercontent.com/Ethan-M2024/wdfw-hatchery-escapement/main/data/"
+BASE = "https://raw.githubusercontent.com/Ethan-M2024/Hatchery-Insights/main/data/"
 
 rows   = pd.read_csv(BASE + "annual_raw.csv.gz")   # every facility × season record
 weekly = pd.read_csv(BASE + "raw.csv.gz")          # every weekly in-season snapshot
