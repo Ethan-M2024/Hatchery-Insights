@@ -1403,13 +1403,38 @@ function renderHero() {
   const last = vals[vals.length - 1], prev = vals[vals.length - 2];
   const mean = vals.reduce((a, b) => a + b, 0) / vals.length;
   const hl = $('hero-label');
-  if (hl) hl.textContent = `${season(Y1)} adults trapped` +
-    (isPrelim(Y1) ? ' (preliminary)' : '');
-  $('hero-val').textContent = fmt(last);
-  const pct = ((last - mean) / mean) * 100;
-  $('hero-sub').textContent =
-    `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% against the 27-season average of ${compact(mean)} · ` +
-    `${last >= prev ? 'up' : 'down'} ${compact(Math.abs(last - prev))} on ${season(Y1 - 1)}`;
+  const live = RAW.in_season;
+  const pace = (live && live.pace) || [];
+
+  /* A season that ended in February is a finished number and will not move again;
+     leading with it in August, while a run is in the river, reads as a dashboard
+     that has stopped updating. When a season is under way it takes the headline,
+     and it is compared against the same date in past seasons — not against their
+     final totals, which is not a comparison at all. */
+  if (live && pace.length >= 2) {
+    const running = pace[pace.length - 1];
+    const before = pace.slice(0, -1);
+    const typical = before.reduce((a, x) => a + x[1], 0) / before.length;
+    const lastYear = before[before.length - 1];
+    const pct = typical ? ((running[1] - typical) / typical) * 100 : 0;
+    if (hl) hl.textContent = `${season(live.year)} adults trapped so far`;
+    $('hero-val').textContent = fmt(running[1]);
+    const against = Math.abs(pct) < 1
+      ? `in line with the same date in the previous ${before.length} seasons`
+      : `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% on the same date in the previous ` +
+        `${before.length} seasons`;
+    $('hero-sub').textContent =
+      `through the report of ${running[2]}, across ${live.facilities} racks · ` +
+      `${against} · ${season(lastYear[0])} had ${fmt(lastYear[1])} by now`;
+  } else {
+    if (hl) hl.textContent = `${season(Y1)} adults trapped` +
+      (isPrelim(Y1) ? ' (preliminary)' : '');
+    $('hero-val').textContent = fmt(last);
+    const pct = ((last - mean) / mean) * 100;
+    $('hero-sub').textContent =
+      `${pct >= 0 ? '+' : ''}${pct.toFixed(0)}% against the 27-season average of ${compact(mean)} · ` +
+      `${last >= prev ? 'up' : 'down'} ${compact(Math.abs(last - prev))} on ${season(Y1 - 1)}`;
+  }
 
   const svg = $('hero-spark');
   clear(svg);
@@ -4366,7 +4391,11 @@ function renderFacProfile(fac, rows, years) {
       + "season's final report about a year after it ends. ");
   }
   if (IS) {
-    const total = IS.species.reduce((a, x) => a + x[1], 0);
+    // the same figure the headline shows: one report's own total, not a sum across
+    // reports, so the two cannot drift apart on the same page
+    const pace = IS.pace || [];
+    const total = pace.length ? pace[pace.length - 1][1]
+      : IS.species.reduce((a, x) => a + x[1], 0);
     add(season(IS.year), true);
     add(' is under way: ');
     add(fmt(total), true);

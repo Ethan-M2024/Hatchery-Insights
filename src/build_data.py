@@ -491,6 +491,48 @@ def build_preliminary(windows, after_year, newest_report, peaks=None):
     return done, running
 
 
+def season_pace(newest_report, seasons=5):
+    """How this season's return compares with past ones at the same date.
+
+    A finished season total and a season under way are not comparable numbers. The
+    same date is: how many adults had reached the racks by the nineteenth of August
+    last year, and the year before that.
+
+    One report is read per season, the last one published on or before that date, and
+    its rows are summed. Not the latest figure for every stock across many reports —
+    a rack reappears under slightly different stock spellings from week to week, each
+    carrying its own running total, and adding those together inflates a season by
+    most of itself. A single snapshot is internally consistent by construction.
+    """
+    import datetime
+    if not os.path.exists(paths.RAW_WEEKLY):
+        return []
+    month, day = newest_report.month, newest_report.day
+    totals = collections.defaultdict(int)          # report date -> adults that day
+    for r in csv.DictReader(open_text(paths.RAW_WEEKLY)):
+        stamp = (r.get('report_date') or '').split(', ', 1)
+        if len(stamp) < 2:
+            continue
+        try:
+            d = datetime.datetime.strptime(stamp[1], '%B %d, %Y').date()
+        except ValueError:
+            continue
+        totals[d] += i(r.get('adult_total')) + i(r.get('jack_total'))
+
+    by_season = collections.defaultdict(list)
+    for d, n in totals.items():
+        season = d.year if d.month >= SEASON_START_MONTH else d.year - 1
+        cutoff = datetime.date(
+            season if month >= SEASON_START_MONTH else season + 1, month, day)
+        if d <= cutoff:
+            by_season[season].append((d, n))
+    out = []
+    for season, points in sorted(by_season.items()):
+        d, n = max(points)
+        out.append([season, n, d.isoformat()])
+    return out[-seasons:]
+
+
 FATE_FIELDS = ['adult_total', 'jack_total', 'mortality', 'surplus',
                'live_released', 'lethal_spawned', 'live_spawned', 'eggtake',
                'shipped', 'on_hand_adults']
@@ -757,6 +799,8 @@ def main():
                 'facilities': len({p['fac'] for p in cur if p['adults'] > 0}),
                 'species': sorted(([k] + v for k, v in by_sp.items()),
                                   key=lambda x: -x[1]),
+                # and what the same date looked like in the seasons before it
+                'pace': season_pace(_d.date.fromisoformat(newest)) if newest else [],
             }
     if wk and wk.get('peaks'):
         fate = build_fate(peaks, facmap)
