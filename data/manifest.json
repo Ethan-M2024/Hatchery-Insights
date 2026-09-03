@@ -2552,6 +2552,12 @@
   "sha": "bb47d091eee9b12afefa320511100522fc9524582b650d534691e7700925861d",
   "url": "https://wdfw.wa.gov/sites/default/files/2026-08/weekly-escapement-08-27-2026.pdf"
  },
+ "w:2026-09__weekly-escapement-09-03-2026.pdf": {
+  "bytes": 121452,
+  "fetched": "2026-09-03T18:15:41+00:00",
+  "sha": "bc220196c99ca72144a397fd5405c7be48bb14b6638e6988993c396d1f099846",
+  "url": "https://wdfw.wa.gov/sites/default/files/2026-09/weekly-escapement-09-03-2026.pdf"
+ },
  "w:hatcheries__escapement__010319.pdf": {
   "bytes": 143893,
   "fetched": "2026-07-29T03:44:14+00:00",
