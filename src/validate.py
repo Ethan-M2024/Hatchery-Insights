@@ -442,6 +442,106 @@ def check_freshness():
         ok(msg)
 
 
+def check_joins():
+    """The two tables joined in from outside the escapement reports.
+
+    Both attach another record's numbers to a hatchery on the strength of its name,
+    which is the weakest key in the whole pipeline. A bad join does not crash — it
+    quietly moves fish between hatcheries — so the shape of the result is checked
+    rather than trusted.
+    """
+    print('\n[11] Outside joins')
+    d = json.load(open(paths.PAYLOAD))
+    facs = d['annual']['facilities']
+    species = d['annual']['species']
+
+    rel = d.get('releases')
+    if not rel:
+        warn('no release records in the payload — the chain stops at the egg')
+    else:
+        bad = [r for r in rel['rows']
+               if not (0 <= r[0] < len(facs)) or not (0 <= r[1] < len(species))]
+        if bad:
+            fail(f'{len(bad)} release rows point at a facility or species that does '
+                 f'not exist')
+        else:
+            ok(f'{len(rel["rows"]):,} release rows, every one on a known rack '
+               f'and species')
+        # every rack should release fewer fish than the state as a whole, obviously,
+        # but the useful check is that no single rack-species-year is absurd
+        worst = max((r[4] for r in rel['rows']), default=0)
+        if worst > 60_000_000:
+            fail(f'a single rack-species-year releases {worst:,} juveniles')
+        else:
+            ok(f'largest single rack-species-year release is {worst:,} juveniles')
+        if rel['unmatched']:
+            ok(f'{len(rel["unmatched"])} unmatched facility names reported on the '
+               f'page rather than folded into a neighbour')
+        first = min((r[2] for r in rel['rows']), default=0)
+        if first < rel['first_year']:
+            fail(f'a release is dated {first}, before the stated first year '
+                 f'{rel["first_year"]}')
+        else:
+            ok(f'no release earlier than the stated first year {rel["first_year"]}')
+
+    fish = d.get('fishery')
+    if not fish:
+        warn('no creel table in the payload — the catch below each rack is not shown')
+        return
+    bad = [r for r in fish['rows']
+           if not (0 <= r[0] < len(facs)) or not (0 <= r[1] < len(species))]
+    if bad:
+        fail(f'{len(bad)} creel rows point at a facility or species that does not exist')
+    else:
+        ok(f'{len(fish["rows"]):,} creel rows, every one on a known rack and species')
+    # a rack matched to a water it has no business being on shows up as a river
+    # whose creel dwarfs every rack on it; the dashboard guards this too, but a
+    # wild ratio here means the join itself has gone wrong
+    trapped = {}
+    for r in d['annual']['rows']:
+        if r[0] >= fish['first_year']:
+            trapped[r[4]] = trapped.get(r[4], 0) + (r[7] or 0)
+    caught = {}
+    for fac, _sp, _y, n in fish['rows']:
+        caught[fac] = caught.get(fac, 0) + n
+    wild = [(facs[f], n, trapped.get(f, 0)) for f, n in caught.items()
+            if trapped.get(f, 0) >= 1000 and n > 5 * trapped.get(f, 1)]
+    if wild:
+        fail('creel catch dwarfs the rack it was joined to: ' +
+             ', '.join(f'{a} {b:,} caught vs {c:,} trapped' for a, b, c in wild[:3]))
+    else:
+        ok('no rack of any size is credited with more catch than it can account for')
+    if fish.get('waters'):
+        ok(f'{len(fish["waters"])} racks carry the waters their catch came from')
+
+
+def check_units():
+    """The parser and join unit tests, run as part of the audit.
+
+    They cover the decisions no amount of looking at the finished page can check:
+    what "(1,204)" means, which line is a species heading, and which rack a release
+    record belongs to. Kept in the audit so they are run every time the data is,
+    rather than only when somebody remembers.
+    """
+    print('\n[12] Unit tests')
+    import unittest
+    here = os.path.dirname(os.path.abspath(__file__))
+    tests = os.path.join(os.path.dirname(here), 'tests')
+    if not os.path.isdir(tests):
+        warn('no tests directory')
+        return
+    suite = unittest.TestLoader().discover(tests, pattern='test_[pj]*.py',
+                                           top_level_dir=tests)
+    result = unittest.TextTestRunner(stream=open(os.devnull, 'w'),
+                                     verbosity=0).run(suite)
+    n = result.testsRun
+    if result.wasSuccessful():
+        ok(f'{n} parser and join unit tests pass')
+    else:
+        for case, trace in result.failures + result.errors:
+            fail(f'{case}: {trace.strip().splitlines()[-1]}')
+
+
 def run():
     global FAILED, WARNED
     FAILED, WARNED = [], []
@@ -451,7 +551,8 @@ def run():
     for fn in (check_reconciliation, check_regions, check_source_quirks,
                check_weekly_against_annual, check_monotonic, check_preliminary,
                check_coverage,
-               check_values, check_geo, check_manifest, check_freshness):
+               check_values, check_geo, check_manifest, check_freshness,
+               check_joins, check_units):
         try:
             fn()
         except Exception as e:

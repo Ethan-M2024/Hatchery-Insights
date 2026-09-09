@@ -161,6 +161,11 @@ h1 {
 @media (min-width: 900px) {
   .filters.stuck .species-field { flex: 1 1 320px; }
 }
+/* a grid or flex child defaults to min-width:auto, so one wide table inside a card
+   pushes the whole column past the viewport instead of scrolling inside its own
+   wrapper. On a phone that is the difference between a page that scrolls sideways
+   and one that does not. */
+.grid > *, .cols-2 > *, .card { min-width: 0; }
 .field { display: flex; flex-direction: column; gap: 5px; }
 .species-field { flex: 1 0 100%; }
 .species-field > span { margin-top: 2px; }
@@ -320,11 +325,43 @@ th.sortable:hover { color: var(--ink); }
 .exp span { display: block; font-size: 12px; color: var(--ink-3); margin-top: 2px; }
 
 /* ---------- print ---------- */
+.finder { display: flex; gap: 8px; align-items: center; position: relative;
+           margin: 0 0 10px; }
+.finder-box { flex: 1; display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  padding: 0 10px; }
+.finder-box:focus-within { outline: 2px solid var(--accent); outline-offset: 1px; }
+.finder-icon { color: var(--ink-3); font-size: 16px; }
+#find { flex: 1; border: 0; background: none; color: var(--ink);
+  font: inherit; padding: 9px 0; min-width: 0; }
+#find:focus { outline: none; }
+.finder-list { position: absolute; z-index: 40; top: calc(100% + 4px); left: 0;
+  right: 44px; margin: 0; padding: 4px; list-style: none; max-height: 340px;
+  overflow-y: auto; background: var(--surface); border: 1px solid var(--line);
+  border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.16); }
+.finder-list li { display: flex; gap: 10px; align-items: baseline; padding: 7px 10px;
+  border-radius: 7px; cursor: pointer; }
+.finder-list li[aria-selected="true"] { background: var(--accent-soft); }
+.finder-list .f-what { color: var(--ink-3); font-size: 12px; margin-left: auto; }
+.shortcuts { position: fixed; z-index: 60; right: 18px; bottom: 18px; width: 300px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; box-shadow: 0 16px 40px rgba(0,0,0,.2); }
+.shortcuts h2 { margin: 0 0 8px; font-size: 15px; }
+.shortcuts dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px;
+  margin: 0 0 8px; font-size: 13px; }
+.shortcuts dt { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--ink-2); }
+.shortcuts dd { margin: 0; }
 @media print {
   @page { margin: 14mm; }
   html, body { background: #fff !important; color: #000 !important; }
   .filters, nav.tabs, .tbl-toggle, .picker, #exp-buttons, #exp-scope,
-  .tip, button, select, input { display: none !important; }
+  .finder, .shortcuts, .tip, button, select, input { display: none !important; }
+  /* the filters are hidden on paper, so the page has to say what it was showing */
+  #print-scope {
+    display: block !important; border: 1px solid #ccc; border-radius: 4px;
+    padding: 6px 9px; margin: 0 0 6mm; font-size: 10pt; color: #000;
+  }
   .wrap { max-width: none; padding: 0; }
   section[role="tabpanel"].hidden { display: none !important; }
   .card {
@@ -349,7 +386,10 @@ th.sortable:hover { color: var(--ink); }
 .subbar-note {
   margin: 0 0 4px; font-size: 12.5px; color: var(--ink-3); flex: 1 1 300px;
 }
-.subbar select { min-width: 210px; }
+/* a select is as wide as its longest option unless it is told otherwise, and
+   "Anadromous Gamefish" is wider than a phone */
+.subbar select { min-width: 210px; max-width: 100%; }
+.subbar > .field { min-width: 0; max-width: 100%; }
 
 /* ---------- all-rack sparklines ---------- */
 .facmini {
@@ -450,6 +490,34 @@ code { font-family: var(--mono); font-size: .92em; }
   </div>
 </header>
 
+<p class="print-only" id="print-scope"></p>
+<div class="finder">
+  <label class="finder-box">
+    <span class="finder-icon" aria-hidden="true">⌕</span>
+    <input id="find" type="search" autocomplete="off" spellcheck="false"
+           role="combobox" aria-expanded="false" aria-controls="find-list"
+           aria-label="Find a hatchery, species or view"
+           placeholder="Find a hatchery, a species or a view — press / to jump here">
+  </label>
+  <button class="ghost" id="help-btn" type="button" aria-label="Keyboard shortcuts">?</button>
+  <ul class="finder-list hidden" id="find-list" role="listbox"></ul>
+</div>
+<div class="shortcuts hidden" id="shortcuts" role="dialog" aria-modal="false"
+     aria-label="Keyboard shortcuts">
+  <h2>Keyboard</h2>
+  <dl>
+    <dt>/</dt><dd>jump to the finder</dd>
+    <dt>1 – 9, 0</dt><dd>the tabs, left to right</dd>
+    <dt>← →</dt><dd>previous or next tab</dd>
+    <dt>t</dt><dd>show the table under whichever chart is on screen</dd>
+    <dt>r</dt><dd>reset every filter</dd>
+    <dt>p</dt><dd>print, or save as PDF</dd>
+    <dt>?</dt><dd>this list</dd>
+    <dt>Esc</dt><dd>close</dd>
+  </dl>
+  <p class="note">Every view is in the address bar, so a link carries the seasons,
+     region, species and tab you are looking at.</p>
+</div>
 <div class="filters" role="group" aria-label="Filters">
   <label class="field"><span>Seasons</span>
     <select id="f-from"></select>
@@ -882,6 +950,41 @@ code { font-family: var(--mono); font-size: .92em; }
   <div class="card">
     <div class="card-head">
       <div>
+        <h2>Adults in, eggs taken, juveniles out</h2>
+        <p class="note" id="chain-note">The escapement reports end at the egg. WDFW
+          publish what left the rack separately, and with both halves the chain
+          closes. A station that takes no eggs and releases nothing is not failing:
+          it is a trap and haul, carrying fish upstream past a dam.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="chain-species"></select>
+        <button class="tbl-toggle" data-table="t-chain">Table</button>
+      </div>
+    </div>
+    <div class="tbl-wrap"><svg class="plot" id="c-chain"></svg></div>
+    <div class="legend" id="l-chain"></div>
+    <div class="tbl-wrap hidden" id="t-chain"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h2>Did anyone catch them?</h2>
+        <p class="note" id="creel-note">An escapement count is what came back to the
+          rack, which is what anglers left. The creel below each hatchery is read
+          from the sibling project that parses it, matched on the water rather than
+          on the fish, because no tag in this record can say more than that.</p>
+      </div>
+      <button class="tbl-toggle" data-table="t-creel">Table</button>
+    </div>
+    <div class="tbl-wrap"><svg class="plot" id="c-creel"></svg></div>
+    <div class="legend" id="l-creel"></div>
+    <div class="tbl-wrap hidden" id="t-creel"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
         <h2>Which stocks are handled where</h2>
         <p class="note" id="stock-note">Every stock against every rack that handled it. Reading down a column shows a hatchery's programme; reading across a row shows how widely a stock is spread.</p>
       </div>
@@ -988,6 +1091,7 @@ code { font-family: var(--mono); font-size: .92em; }
   <div><strong>Source.</strong> WDFW <a href="https://wdfw.wa.gov/fishing/management/hatcheries/escapement" target="_blank" rel="noopener">Hatchery Escapement Reports</a> — every annual report published since 1998, plus the weekly in-season series. Parsed values were checked against every published statewide total in the annual reports; all <span id="recon-n">562</span> reconcile exactly.</div>
   <div><strong>Reading these numbers.</strong> Escapement here means fish returning to a hatchery rack or trap — not the total run to a river. Fish that spawn below the rack, are caught, or pass an idle trap are not counted. Weekly figures are preliminary in-season estimates; annual figures are final.</div>
   <div><strong>Joins.</strong> The 1998–99 and 1999–2000 reports use shorter facility names than later years; those are matched to the modern names where unambiguous, and names that the WDFW GIS layer resolves to one physical site are folded together so a hatchery's history is continuous. Egg-take goals are absent (<code>NA</code>) on many rows and are excluded from attainment rather than treated as zero.</div>
+  <div><strong>Two records joined in from outside.</strong> The escapement reports end at the egg, so what a rack put back in the water comes from WDFW's <a href="https://data.wa.gov/d/6fex-3r7d" target="_blank" rel="noopener">fish plant records</a>, and the sport catch below a rack from the <a href="https://github.com/Ethan-M2024/Creel-Insights" target="_blank" rel="noopener">creel table this project's sibling parses</a>. Both are joined on the name of the place, which is the weakest key here: a release or a creel place is only credited to a rack when exactly one rack answers to that name, and the <span id="foot-unmatched">unmatched</span> names that answer to none are listed on the page rather than folded into a neighbour. Salt water is never attributed to a rack, because fish caught there came from every river on the coast.</div>
   <div><strong>Locations.</strong> Coordinates, county, WRIA and waterbody come from the WDFW <em>HatcheryLikeFacilities</em> GIS layer (WGS84), joined to the escapement records by facility name.</div>
   <div><strong>Known source quirks.</strong> The "trapped less released" (net) columns are published by WDFW as a separate calculation, not as a subtraction of the columns beside them — their own statewide totals fail that identity in about 30% of species-seasons. Those columns are carried through to the exports exactly as printed and are not used in any chart here. Every other column reconciles to WDFW's published statewide totals exactly.</div>
   <div id="foot-build"></div>
@@ -2314,7 +2418,7 @@ function renderAll() {
     renderTrends(years); renderBrood(years);
 
   } else if (panel === 'panel-programs') {
-    renderStockMatrix(); renderTransfers();
+    renderStockMatrix(); renderTransfers(); renderChain(); renderCreel();
   } else if (panel === 'panel-map') {
     renderMap(rows, years); renderWria(rows);
   } else if (panel === 'panel-data') {
@@ -3973,6 +4077,307 @@ function renderBrood(years) {
 /* ===================================================================
    Stock x facility matrix, and the fish-transfer network
    =================================================================== */
+/* ===================== the production chain =====================
+   Adults to the rack, eggs taken, juveniles out. The first two come from the
+   escapement reports; the third from WDFW's release records, which this dashboard
+   did not read until now and without which every trap-and-haul station looked like
+   a hatchery that had failed to spawn anything.
+
+   The three are on wildly different scales — hundreds of adults, millions of eggs —
+   so they are drawn as three stacked panels sharing one time axis rather than three
+   lines squashed onto one, which would flatten the adults into the floor.
+
+   Eggs and juveniles are linked by brood year, not by season: eggs taken in the
+   2019-20 season are brood 2019, and the fish released from them leave the rack a
+   year or two later. That link is exact in the data and is what the survival line
+   in the table is computed from. */
+
+/* a brood needs about this long before its releases are all counted */
+const RELEASE_LAG = 3;
+
+const REL = RAW.releases || null;
+const FISHERY = RAW.fishery || null;
+/* below this the rack cannot stand for the river's escapement */
+const MIN_TRAPPED = 1000;
+
+function renderChain() {
+  const svg = $('c-chain'), note = $('chain-note');
+  clear(svg);
+  if (!REL || !REL.rows.length) {
+    note.textContent = 'The release records are not in this build, so the chain ' +
+      'stops at the egg.';
+    return;
+  }
+  const sel = $('chain-species');
+  if (!sel.options.length) {
+    /* only species the record can actually follow end to end: a release table row
+       with no escapement row behind it has no adults or eggs to draw */
+    const seen = new Set(REL.rows.map(r => r[1]));
+    const reared = new Set(A.rows.filter(r => r[C.adults] > 0).map(r => r[C.sp]));
+    SP_ORDER.filter(sp => seen.has(sp) && reared.has(sp))
+      .forEach(sp => sel.appendChild(new Option(A.species[sp], sp)));
+    if (!sel.options.length) { note.textContent = 'No species in common.'; return; }
+    state.chainSp = state.chainSp ?? +sel.options[0].value;
+    sel.value = state.chainSp;
+    sel.addEventListener('change', () => { state.chainSp = +sel.value; renderAll(); });
+  }
+  const sp = state.chainSp ?? +sel.options[0].value;
+  sel.value = sp;
+
+  /* adults and eggs follow whatever seasons, region and rack filter is set above;
+     releases carry no region of their own, so they are held to the same racks */
+  const facs = new Set(), adults = new Map(), eggs = new Map();
+  for (const r of rowsInScope()) {
+    if (r[C.sp] !== sp) continue;
+    const y = r[C.year];
+    facs.add(r[C.fac]);
+    adults.set(y, (adults.get(y) || 0) + r[C.adults]);
+    eggs.set(y, (eggs.get(y) || 0) + (r[C.eggtake] || 0));
+  }
+  const out = new Map(), byBrood = new Map();
+  for (const [fac, rsp, year, brood, n] of REL.rows) {
+    if (rsp !== sp || !facs.has(fac)) continue;
+    if (year >= state.from && year <= state.to) out.set(year, (out.get(year) || 0) + n);
+    byBrood.set(brood, (byBrood.get(brood) || 0) + n);
+  }
+  const years = [...new Set([...adults.keys(), ...out.keys()])]
+    .filter(y => y >= REL.first_year).sort((a, b) => a - b);
+  if (years.length < 2) {
+    note.textContent = 'Not enough overlapping seasons for this selection. ' +
+      'Release records begin in ' + REL.first_year + '.';
+    renderLegend($('l-chain'), []);
+    clear($('t-chain'));
+    return;
+  }
+
+  const colour = colorOf(sp);
+  const panels = [
+    { name: 'adults to the rack', get: y => adults.get(y) || 0 },
+    { name: 'eggs taken', get: y => eggs.get(y) || 0 },
+    { name: 'juveniles released', get: y => out.get(y) || 0 },
+  ];
+  drawChainPlot(svg, years, panels, colour);
+  renderLegend($('l-chain'), [
+    { name: A.species[sp] + ' — each panel on its own scale', color: colour }], true);
+
+  const last = years[years.length - 1];
+  /* a brood released in the last three years is still partly in the ponds, so the
+     headline quotes the newest brood that has finished leaving rather than the
+     newest one on the chart, which always reads near zero for that reason alone */
+  const ripe = years.filter(y => y <= last - RELEASE_LAG && eggs.get(y) && byBrood.has(y));
+  const broodYear = ripe.length ? ripe[ripe.length - 1] : null;
+  const survival = broodYear ? (byBrood.get(broodYear) / eggs.get(broodYear)) * 100 : null;
+  note.textContent =
+    'The escapement reports end at the egg; WDFW publish what left the rack ' +
+    'separately, and with both halves the chain closes. In ' + season(last) + ', ' +
+    fmt(adults.get(last) || 0) + ' adults reached these racks, ' +
+    fmt(eggs.get(last) || 0) + ' eggs were taken and ' + fmt(out.get(last) || 0) +
+    ' juveniles were released' +
+    (survival != null && survival > 0 && survival < 200
+      ? '. Of the eggs taken in ' + season(broodYear) + ' — the newest brood that ' +
+        'has finished leaving — ' + survival.toFixed(0) + ' juveniles were released ' +
+        'for every hundred.'
+      : '.') +
+    ' A station that takes no eggs and still releases nothing is not failing: it is ' +
+    'a trap and haul, carrying fish upstream past a dam. ' +
+    (REL.unmatched.length
+      ? REL.unmatched.length + ' release records name a facility this record does ' +
+        'not hold; they are left out rather than folded into a neighbour.' : '');
+
+  renderTable($('t-chain'),
+    [{ label: 'Season', left: true, get: r => season(r.y) },
+     { label: 'Adults', get: r => fmt(r.a) },
+     { label: 'Eggs taken', get: r => fmt(r.e) },
+     { label: 'Eggs per adult', get: r => r.a ? (r.e / r.a).toFixed(0) : '—' },
+     { label: 'Released', get: r => fmt(r.o) },
+     { label: 'Per 100 eggs of that brood',
+       get: r => r.e && r.b != null ? ((r.b / r.e) * 100).toFixed(0) : '—' }],
+    years.slice().reverse().map(y => ({
+      y, a: adults.get(y) || 0, e: eggs.get(y) || 0, o: out.get(y) || 0,
+      b: byBrood.has(y) ? byBrood.get(y) : null })),
+    { caption: 'The last column follows the brood year, so it pairs eggs taken in a ' +
+        'season with the fish those eggs became, which leave a year or two later. ' +
+        'Recent broods are still in the ponds and read low for that reason alone.' });
+}
+
+/* three panels, one x axis: the only honest way to put hundreds of adults and
+   millions of eggs on the same picture */
+function drawChainPlot(svg, years, panels, colour) {
+  const Wd = width(svg), m = { t: 18, r: 20, b: 24, l: 58 };
+  const ph = 84, gap = 26;
+  const H = m.t + panels.length * ph + (panels.length - 1) * gap + m.b;
+  svg.setAttribute('viewBox', '0 0 ' + Wd + ' ' + H);
+  svg.setAttribute('height', H);
+  const iw = Math.max(10, Wd - m.l - m.r);
+  const span = Math.max(1, years[years.length - 1] - years[0]);
+  const X = y => m.l + ((y - years[0]) / span) * iw;
+
+  panels.forEach((p, i) => {
+    const top = m.t + i * (ph + gap), base = top + ph;
+    const max = Math.max(1, ...years.map(p.get));
+    const Y = v => base - (v / max) * ph;
+    el('line', { class: 'axis-line', x1: m.l, x2: m.l + iw, y1: base, y2: base }, svg);
+    el('text', { class: 'tick', x: m.l - 8, y: top + 10, 'text-anchor': 'end' }, svg)
+      .textContent = compact(max);
+    /* the panel's name sits above its band, clear of the trace inside it */
+    el('text', { class: 'dlabel', x: m.l, y: top - 6 }, svg).textContent = p.name;
+    let d = 'M' + X(years[0]) + ' ' + base;
+    for (const y of years) d += 'L' + X(y) + ' ' + Y(p.get(y));
+    d += 'L' + X(years[years.length - 1]) + ' ' + base + 'Z';
+    el('path', { d, fill: colour, 'fill-opacity': .16 }, svg);
+    el('path', { class: 'serie', d: years.map((y, k) => (k ? 'L' : 'M') + X(y) + ' ' +
+                 Y(p.get(y))).join(''), stroke: colour, fill: 'none' }, svg);
+    for (const y of years) {
+      el('circle', { cx: X(y), cy: Y(p.get(y)), r: 2.4, fill: colour }, svg);
+    }
+  });
+
+  const every = Math.max(1, Math.ceil(years.length / Math.max(2, Math.floor(iw / 70))));
+  for (let i = years.length - 1; i >= 0; i -= every) {
+    /* the end labels are pulled inside the frame rather than centred off it */
+    const x = X(years[i]);
+    const anchor = i === years.length - 1 ? 'end' : (i === 0 ? 'start' : 'middle');
+    el('text', { class: 'tick', x, y: H - 8, 'text-anchor': anchor }, svg)
+      .textContent = season(years[i]);
+  }
+
+  /* one crosshair for all three panels: the point is to read the chain at a season */
+  const plotTop = m.t, plotBot = m.t + panels.length * ph + (panels.length - 1) * gap;
+  const cross = el('line', { class: 'crosshair', y1: plotTop, y2: plotBot,
+                             x1: -99, x2: -99 }, svg);
+  const hit = el('rect', { class: 'hit', x: m.l, y: plotTop, width: iw,
+                           height: plotBot - plotTop }, svg);
+  const pick = ev => {
+    const bb = svg.getBoundingClientRect();
+    const px = (ev.clientX - bb.left) * (Wd / bb.width);
+    let i = Math.round(((px - m.l) / iw) * (years.length - 1));
+    i = Math.max(0, Math.min(years.length - 1, i));
+    /* nearest season actually present, not the nearest slot on a gapless axis */
+    let best = years[0];
+    for (const y of years) if (Math.abs(X(y) - px) < Math.abs(X(best) - px)) best = y;
+    cross.setAttribute('x1', X(best)); cross.setAttribute('x2', X(best));
+    showTip(ev.clientX, ev.clientY, season(best),
+      panels.map(p => ({ color: colour, value: fmt(p.get(best)), name: p.name })));
+  };
+  hit.addEventListener('pointermove', pick);
+  hit.addEventListener('pointerleave', () => {
+    hideTip(); cross.setAttribute('x1', -99); cross.setAttribute('x2', -99);
+  });
+}
+
+/* ===================== did anyone catch them? =====================
+   An escapement count is what came back to the rack, which is what anglers left.
+   The creel table from the sibling project counts the other half on the same river,
+   and the two together say what the run was before it was fished. */
+
+function renderCreel() {
+  const svg = $('c-creel'), note = $('creel-note');
+  clear(svg);
+  if (!FISHERY || !FISHERY.rows.length) {
+    note.textContent = 'The creel table was not reachable for this build, so the ' +
+      'sport catch below each rack is not shown.';
+    clear($('t-creel'));
+    return;
+  }
+  const wantSp = state.species;
+  const caught = new Map(), trapped = new Map(), spSeen = new Map();
+  for (const [fac, sp, year, n] of FISHERY.rows) {
+    if (year < state.from || year > state.to) continue;
+    if (wantSp.size && !wantSp.has(sp)) continue;
+    caught.set(fac, (caught.get(fac) || 0) + n);
+    if (!spSeen.has(fac)) spSeen.set(fac, new Set());
+    spSeen.get(fac).add(sp);
+  }
+  /* the denominator has to cover the same species as the numerator. Lyons Ferry's
+     creel below the dam counts walleye and pikeminnow; its rack counts Chinook.
+     Pooling the two would set a salmon escapement against a walleye catch. */
+  for (const r of rowsInScope()) {
+    if (r[C.year] < FISHERY.first_year) continue;
+    const sp = spSeen.get(r[C.fac]);
+    if (!sp || !sp.has(r[C.sp])) continue;
+    trapped.set(r[C.fac], (trapped.get(r[C.fac]) || 0) + r[C.adults]);
+  }
+  /* The denominator has to be the river's escapement, and it only is when the rack
+     named after the river is the one the fish actually go to. Where it is not — the
+     Puyallup rack holds thirty fish while the Puyallup creel counts seventeen
+     thousand, because those fish are climbing to Voights Creek — the ratio explodes
+     and says nothing. A floor under the trapped count throws those rows out rather
+     than letting a near-empty denominator top the chart. */
+  const rows = [...caught.entries()]
+    .map(([fac, fish]) => ({ fac, fish, trap: trapped.get(fac) || 0 }))
+    .filter(r => r.trap >= MIN_TRAPPED)
+    .map(r => Object.assign(r, { run: r.fish + r.trap }))
+    .map(r => Object.assign(r, { share: r.fish / r.run, ratio: r.fish / r.trap }))
+    .sort((a, b) => b.share - a.share);
+  const dropped = caught.size - rows.length;
+  if (!rows.length) {
+    note.textContent = 'No rack in this selection has both a creel survey on its ' +
+      'own river and enough fish at the rack to compare it against. Salt water is ' +
+      'left out on purpose: fish caught there came from everywhere, and crediting ' +
+      'them to one rack would be an invention.';
+    clear($('t-creel'));
+    return;
+  }
+  const shown = rows.slice(0, 14);
+
+  const rh = 26, m = { t: 10, r: 178, b: 10, l: 176 };
+  const Wd = width(svg), H = m.t + shown.length * rh + m.b;
+  svg.setAttribute('viewBox', '0 0 ' + Wd + ' ' + H);
+  svg.setAttribute('height', H);
+  const iw = Math.max(10, Wd - m.l - m.r);
+  const max = Math.max(...shown.map(r => r.share));
+  shown.forEach((r, i) => {
+    const y = m.t + i * rh;
+    el('text', { class: 'tick', x: m.l - 8, y: y + rh / 2 + 4,
+                 'text-anchor': 'end' }, svg)
+      .textContent = (A.facilities[r.fac] || '').slice(0, 26);
+    const w = Math.max(1, (r.share / max) * iw);
+    const bar = el('rect', { x: m.l, y: y + 4, width: w, height: rh - 10, rx: 3,
+                             fill: cssv('--accent') }, svg);
+    el('text', { class: 'tick', x: m.l + w + 8, y: y + rh / 2 + 4 }, svg)
+      .textContent = (r.share * 100).toFixed(1) + '% of ' + compact(r.run) + ' fish';
+    bar.style.cursor = 'pointer';
+    bar.addEventListener('pointermove', ev =>
+      showTip(ev.clientX, ev.clientY, A.facilities[r.fac], [
+        { value: fmt(r.fish), name: 'counted in the creel' },
+        { value: fmt(r.trap), name: 'adults reaching the rack' },
+        { value: (r.share * 100).toFixed(1) + '%',
+          name: 'of the two together were caught' }]));
+    bar.addEventListener('pointerleave', hideTip);
+  });
+  renderLegend($('l-creel'), [
+    { name: 'the share of the fish accounted for on this river that anglers caught',
+      color: cssv('--accent') }], true);
+
+  const top = shown[0];
+  note.textContent =
+    'Two counts of the same run: fish that creel surveyors saw on a rack’s own ' +
+    'river since ' + FISHERY.first_year + ', and fish that reached the rack. The ' +
+    'bar is the first as a share of both together, so it is bounded and comparable ' +
+    'across rivers. ' + A.facilities[top.fac] + ' leads at ' +
+    (top.share * 100).toFixed(1) + '%. This is a floor on what was taken, not a ' +
+    'harvest rate: a creel survey covers part of the season and part of the river, ' +
+    'so the true share is higher. Rivers with no creel survey have no row, salt ' +
+    'water is excluded because fish caught there came from everywhere' +
+    (dropped ? ', and ' + dropped + ' rack' + (dropped === 1 ? '' : 's') +
+      ' held fewer than ' + fmt(MIN_TRAPPED) + ' fish over the period, too few for ' +
+      'the rack to stand for the river’s escapement' : '') + '.';
+
+  renderTable($('t-creel'),
+    [{ label: 'Hatchery', left: true, get: r => A.facilities[r.fac] },
+     { label: 'Species with a creel', get: r => (spSeen.get(r.fac) || new Set()).size },
+     { label: 'Adults to the rack', get: r => fmt(r.trap) },
+     { label: 'Counted in the creel', get: r => fmt(r.fish) },
+     { label: 'Share caught', get: r => (r.share * 100).toFixed(1) + '%' },
+     { label: 'Caught per trapped', get: r => r.ratio.toFixed(2) }],
+    rows,
+    { caption: 'Racks holding fewer than ' + fmt(MIN_TRAPPED) + ' fish since ' +
+        FISHERY.first_year + ' are left out: where the run climbs past the rack ' +
+        'named after the river to another one upstream, the rack is not the ' +
+        'river’s escapement and the comparison is meaningless.' });
+}
+
+
 function renderStockMatrix() {
   const sel = $('stock-species');
   if (!sel.options.length) {
@@ -4404,6 +4809,12 @@ function renderFacProfile(fac, rows, years) {
   }
 })();
 
+(function joinCounts() {
+  const n = $('foot-unmatched');
+  if (!n) return;
+  n.textContent = RAW.releases ? fmt(RAW.releases.unmatched.length) : 'unmatched';
+})();
+
 (function provenance() {
   const m = RAW.meta || {};
   const bits = [];
@@ -4434,7 +4845,268 @@ function renderFacProfile(fac, rows, years) {
     el.appendChild(document.createTextNode('.'));
   }
 })();
+/* ===================== getting around =====================
+   Three things a dashboard this size needs and did not have: a way to find a
+   hatchery among ninety-six without scrolling, a URL that carries the view so a
+   link means something, and keys for the things done over and over. */
+
+/* every piece of state worth putting in a link. Anything not here is a detail of
+   one card and would only make the URL longer without making it more useful. */
+const URL_KEYS = ['tab', 'from', 'to', 'region', 'bo', 'species', 'facility',
+                  'chainSp', 'stockSp', 'timingSp', 'raceSp', 'cmpMeasure'];
+
+let hashLocked = false;   /* set while we are the ones writing the hash */
+
+function stateToHash() {
+  const q = new URLSearchParams();
+  const tab = activePanel().replace('panel-', '');
+  if (tab !== 'overview') q.set('tab', tab);
+  if (state.from !== Y0) q.set('from', state.from);
+  if (state.to !== Y1) q.set('to', state.to);
+  if (state.region !== '') q.set('region', state.region);
+  if (state.bo !== '') q.set('bo', state.bo);
+  const sp = [...state.species].sort((a, b) => a - b);
+  const def = [...primaryIdx].sort((a, b) => a - b);
+  if (sp.join(',') !== def.join(',')) q.set('species', sp.join(',') || 'none');
+  if (state.facility != null) q.set('facility', state.facility);
+  for (const k of ['chainSp', 'stockSp', 'timingSp', 'raceSp']) {
+    if (state[k] != null && state[k] !== '') q.set(k, state[k]);
+  }
+  if (state.cmpMeasure && state.cmpMeasure !== 'adults') q.set('cmpMeasure', state.cmpMeasure);
+  const hash = q.toString();
+  const url = location.pathname + location.search + (hash ? '#' + hash : '');
+  hashLocked = true;
+  history.replaceState(null, '', url);
+  setTimeout(() => { hashLocked = false; }, 0);
+}
+
+function hashToState() {
+  const q = new URLSearchParams(location.hash.replace(/^#/, ''));
+  if (![...q.keys()].length) return false;
+  const num = (k, lo, hi) => {
+    const v = +q.get(k);
+    return q.has(k) && Number.isFinite(v) && v >= lo && v <= hi ? v : null;
+  };
+  const from = num('from', YEARS[0], YEARS[YEARS.length - 1]);
+  const to = num('to', YEARS[0], YEARS[YEARS.length - 1]);
+  if (from != null) state.from = from;
+  if (to != null) state.to = to;
+  if (state.from > state.to) state.from = state.to;
+  if (q.has('region') && A.regions[+q.get('region')]) state.region = q.get('region');
+  if (q.has('bo') && ['1', '2', '3'].includes(q.get('bo'))) state.bo = q.get('bo');
+  if (q.has('species')) {
+    const raw = q.get('species');
+    state.species = new Set(raw === 'none' ? []
+      : raw.split(',').map(Number).filter(i => A.species[i] != null));
+  }
+  const fac = num('facility', 0, A.facilities.length - 1);
+  if (fac != null) state.facility = fac;
+  for (const k of ['chainSp', 'stockSp', 'timingSp', 'raceSp']) {
+    const v = num(k, 0, A.species.length - 1);
+    if (v != null) state[k] = v;
+  }
+  if (q.has('cmpMeasure')) state.cmpMeasure = q.get('cmpMeasure');
+  if (q.has('tab')) showTab('tab-' + q.get('tab'), false);
+  syncControls();
+  return true;
+}
+
+/* the controls are the state made visible; after a hash load they have to agree */
+function syncControls() {
+  const setV = (id, v) => { const n = $(id); if (n) n.value = v; };
+  setV('f-from', state.from); setV('f-to', state.to);
+  setV('f-region', state.region); setV('f-bo', state.bo);
+  document.querySelectorAll('#f-species .chip').forEach((c, i) =>
+    c.setAttribute('aria-pressed', state.species.has(SP_ORDER[i])));
+  for (const [id, k] of [['chain-species', 'chainSp'], ['stock-species', 'stockSp']]) {
+    const n = $(id);
+    if (n && state[k] != null && [...n.options].some(o => +o.value === state[k])) {
+      n.value = state[k];
+    }
+  }
+}
+
+function showTab(id, render = true) {
+  const t = $(id);
+  if (!t) return;
+  [...document.querySelectorAll('.tab')].forEach(o => {
+    const on = o === t;
+    o.setAttribute('aria-selected', on);
+    $(o.getAttribute('aria-controls')).classList.toggle('hidden', !on);
+  });
+  if (render) renderAll();
+}
+
+/* ---------- the finder ---------- */
+const TAB_LABELS = [...document.querySelectorAll('.tab')]
+  .map(t => ({ id: t.id, label: t.textContent.trim() }));
+
+function findIndex() {
+  const out = [];
+  for (const t of TAB_LABELS) {
+    out.push({ name: t.label, what: 'view', go: () => showTab(t.id) });
+  }
+  A.facilities.forEach((name, i) => {
+    out.push({
+      name, what: 'hatchery', go: () => {
+        state.facility = i;
+        showTab('tab-facility');
+        const sel = $('fac-select');
+        if (sel) { sel.value = i; }
+        renderAll();
+        const card = $('fac-profile');
+        if (card) card.scrollIntoView({ block: 'center' });
+      }
+    });
+  });
+  SP_ORDER.forEach(sp => {
+    out.push({
+      name: A.species[sp], what: 'species only', go: () => {
+        state.species = new Set([sp]);
+        syncControls();
+        renderAll();
+      }
+    });
+  });
+  A.regions.forEach((r, i) => {
+    if (r === 'Unknown') return;
+    out.push({
+      name: r, what: 'region', go: () => {
+        state.region = String(i); syncControls(); renderAll();
+      }
+    });
+  });
+  return out;
+}
+
+(function initFinder() {
+  const box = $('find'), list = $('find-list');
+  if (!box || !list) return;
+  const index = findIndex();
+  let hits = [], cursor = 0;
+
+  const close = () => {
+    list.classList.add('hidden');
+    box.setAttribute('aria-expanded', 'false');
+    hits = [];
+  };
+
+  const draw = () => {
+    clear(list);
+    hits.forEach((h, i) => {
+      const li = document.createElement('li');
+      li.setAttribute('role', 'option');
+      li.setAttribute('aria-selected', i === cursor);
+      const n = document.createElement('span'); n.textContent = h.name;
+      const w = document.createElement('span'); w.className = 'f-what';
+      w.textContent = h.what;
+      li.append(n, w);
+      li.addEventListener('mousedown', ev => { ev.preventDefault(); pick(i); });
+      list.appendChild(li);
+    });
+    list.classList.toggle('hidden', !hits.length);
+    box.setAttribute('aria-expanded', hits.length ? 'true' : 'false');
+  };
+
+  const pick = i => {
+    const h = hits[i];
+    if (!h) return;
+    close();
+    box.value = '';
+    h.go();
+  };
+
+  const search = q => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return [];
+    /* a name that starts with what was typed beats one that merely contains it,
+       so "sol" finds SOL DUC before SKOOKUMCHUCK */
+    const starts = [], has = [];
+    for (const item of index) {
+      const low = item.name.toLowerCase();
+      if (low.startsWith(needle)) starts.push(item);
+      else if (low.includes(needle)) has.push(item);
+    }
+    return [...starts, ...has].slice(0, 12);
+  };
+
+  box.addEventListener('input', () => {
+    hits = search(box.value); cursor = 0; draw();
+  });
+  box.addEventListener('blur', () => setTimeout(close, 120));
+  box.addEventListener('keydown', ev => {
+    if (ev.key === 'ArrowDown') { cursor = Math.min(cursor + 1, hits.length - 1); draw(); ev.preventDefault(); }
+    else if (ev.key === 'ArrowUp') { cursor = Math.max(cursor - 1, 0); draw(); ev.preventDefault(); }
+    else if (ev.key === 'Enter') { pick(cursor); ev.preventDefault(); }
+    else if (ev.key === 'Escape') { box.value = ''; close(); box.blur(); }
+  });
+})();
+
+/* ---------- keys ---------- */
+(function initKeys() {
+  const panel = $('shortcuts'), btn = $('help-btn');
+  const toggleHelp = on => panel.classList.toggle('hidden',
+    on == null ? !panel.classList.contains('hidden') : !on);
+  if (btn) btn.addEventListener('click', () => toggleHelp());
+
+  addEventListener('keydown', ev => {
+    const t = ev.target;
+    const typing = t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' ||
+                         t.tagName === 'TEXTAREA' || t.isContentEditable);
+    if (ev.key === 'Escape') { toggleHelp(false); return; }
+    if (typing || ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    const tabs = [...document.querySelectorAll('.tab')];
+    const at = tabs.findIndex(x => x.getAttribute('aria-selected') === 'true');
+    if (ev.key === '/') { $('find').focus(); ev.preventDefault(); }
+    else if (ev.key === '?') { toggleHelp(); }
+    else if (/^[1-9]$/.test(ev.key)) {
+      const t2 = tabs[+ev.key - 1]; if (t2) { showTab(t2.id); ev.preventDefault(); }
+    } else if (ev.key === '0') {
+      const t2 = tabs[9]; if (t2) { showTab(t2.id); ev.preventDefault(); }
+    } else if (ev.key === 'ArrowLeft' && at > 0) { showTab(tabs[at - 1].id); }
+    else if (ev.key === 'ArrowRight' && at < tabs.length - 1) { showTab(tabs[at + 1].id); }
+    else if (ev.key === 't') {
+      /* the table under whichever chart is nearest the middle of the screen */
+      const buttons = [...document.querySelectorAll('.tbl-toggle')]
+        .filter(b => b.offsetParent);
+      if (!buttons.length) return;
+      const mid = innerHeight / 2;
+      buttons.sort((a, b) =>
+        Math.abs(a.getBoundingClientRect().top - mid) -
+        Math.abs(b.getBoundingClientRect().top - mid));
+      buttons[0].click();
+    } else if (ev.key === 'r') { $('f-reset').click(); }
+    else if (ev.key === 'p') { print(); ev.preventDefault(); }
+  });
+})();
+
+/* ---------- what the page was showing, for the printed copy ---------- */
+function printScope() {
+  const n = $('print-scope');
+  if (!n) return;
+  const sp = [...state.species].sort((a, b) => SP_ORDER.indexOf(a) - SP_ORDER.indexOf(b))
+    .map(i => A.species[i]);
+  n.textContent =
+    'Showing: ' + activePanel().replace('panel-', '') + ' · seasons ' +
+    season(state.from) + ' to ' + season(state.to) + ' · ' +
+    (state.region === '' ? 'all regions' : A.regions[+state.region]) + ' · ' +
+    (state.bo === '' ? 'all origins' : ['', 'hatchery', 'wild', 'mixed'][+state.bo]) +
+    ' · ' + (sp.length ? sp.join(', ') : 'no species selected') + '.';
+}
+
+/* renderAll is the one thing every control already calls, so the hash and the
+   printed scope line hang off it rather than off two dozen listeners */
+const renderCore = renderAll;
+renderAll = function () { renderCore(); stateToHash(); printScope(); };
+
+addEventListener('hashchange', () => {
+  if (hashLocked) return;      /* our own replaceState, not the back button */
+  hashToState();
+  renderAll();
+});
+
 let rt; addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(renderAll, 160); });
+hashToState();
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(renderAll, 30));
 new MutationObserver(() => setTimeout(renderAll, 30))
   .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });

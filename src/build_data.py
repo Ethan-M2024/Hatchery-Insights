@@ -815,6 +815,27 @@ def main():
     if running_season:
         data['in_season'] = running_season
 
+    # ---------------------------------------------------------------- releases
+    # The escapement record ends at the egg. WDFW publish what left the rack as a
+    # separate table, and without it a trap-and-haul station reads as a hatchery
+    # that took no eggs rather than as one that was never meant to.
+    try:
+        import plants
+        data['releases'] = plants.load(A['facilities'], A['species'])
+    except Exception as exc:
+        print(f'!! release records unavailable: {exc}')
+
+    # --------------------------------------------------------------- the fishery
+    # Whether any of these fish met an angler is not in this record at all. The
+    # sibling creel project parses that, and publishes it.
+    try:
+        import fishery
+        caught = fishery.load(A['facilities'], A['species'])
+        if caught:
+            data['fishery'] = caught
+    except Exception as exc:
+        print(f'!! creel catch unavailable: {exc}')
+
     g = build_geo(data['annual']['facilities'])
     if g:
         data['geo'] = g

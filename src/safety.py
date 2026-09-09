@@ -7,6 +7,7 @@ boundary must not be able to choose where a file lands or which host is contacte
 Everything in this module exists to make that impossible rather than unlikely.
 """
 import io
+import ssl
 import os
 import re
 import urllib.error
@@ -19,6 +20,8 @@ import urllib.request
 ALLOWED_HOSTS = frozenset({
     'wdfw.wa.gov',                  # the escapement reports themselves
     'geodataservices.wdfw.wa.gov',  # WDFW hatchery facility locations
+    'data.wa.gov',                  # WDFW's juvenile release records
+    'raw.githubusercontent.com',    # the sibling creel project's parsed catch
 })
 
 #: no single response may exceed this; the largest real report is about 9 MB
@@ -98,7 +101,25 @@ class _StrictRedirectHandler(urllib.request.HTTPRedirectHandler):
         return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 
-_opener = urllib.request.build_opener(_StrictRedirectHandler)
+def _trust_store():
+    """Verify certificates against a bundle that exists on every machine.
+
+    A stock Python on macOS may have no root certificates installed at all, which
+    fails on hosts outside the ones the system happens to trust — the sibling
+    project's files download in CI and refuse to download on a laptop. Where certifi
+    is installed its bundle is used; otherwise the platform default stands, and a
+    verification failure is still a failure. Verification is never turned off.
+    """
+    try:
+        import certifi
+        return ssl.create_default_context(cafile=certifi.where())
+    except Exception:
+        return ssl.create_default_context()
+
+
+_opener = urllib.request.build_opener(
+    _StrictRedirectHandler,
+    urllib.request.HTTPSHandler(context=_trust_store()))
 
 
 def fetch(url, *, timeout=90, user_agent, max_bytes=MAX_DOWNLOAD_BYTES):
