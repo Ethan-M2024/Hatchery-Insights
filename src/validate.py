@@ -515,6 +515,64 @@ def check_joins():
         ok(f'{len(fish["waters"])} racks carry the waters their catch came from')
 
 
+def check_facility_timing():
+    """The per-rack arrival curves behind "when the fish arrive"."""
+    print('\n[12] Run timing by rack')
+    d = json.load(open(paths.PAYLOAD))
+    W = d.get('weekly') or {}
+    byfac = W.get('byfac')
+    if not byfac:
+        warn('no per-rack arrival curves in the payload')
+        return
+    rows = byfac['rows']
+    ok(f'{len(rows)} rack-run pairs across {len(byfac["facilities"])} racks')
+    bad = [r for r in rows if not (0 <= r['sp'] < len(W['species']))
+           or not (0 <= r['f'] < len(byfac['facilities']))]
+    if bad:
+        fail(f'{len(bad)} curves point at a rack or run that does not exist')
+    else:
+        ok('every curve names a rack and a run the weekly series knows')
+    # a cumulative share can only go up, and must run from nothing to everything
+    broken = [r for r in rows
+              if any(b < a for a, b in zip(r['med'], r['med'][1:]))
+              or r['med'][0] > 5 or r['med'][-1] < 95]
+    if broken:
+        fail(f'{len(broken)} curves are not a cumulative share running 0 to 100')
+    else:
+        ok('every curve rises from nothing to the whole run without going backwards')
+    # the band has to contain the line it is drawn around
+    crossed = [r for r in rows
+               if any(lo > m + 0.5 or hi < m - 0.5
+                      for lo, m, hi in zip(r['lo'], r['med'], r['hi']))]
+    if crossed:
+        fail(f'{len(crossed)} curves have a quartile band that does not contain '
+             f'the median')
+    else:
+        ok('the quartile band contains the median at every week')
+    thin = [r for r in rows if len(r['seasons']) < byfac['min_seasons']]
+    if thin:
+        fail(f'{len(thin)} curves average fewer than {byfac["min_seasons"]} seasons')
+    else:
+        ok(f'every curve averages at least {byfac["min_seasons"]} seasons')
+    # Where a rack's weekly totals sit against the annual report's. They disagree
+    # for satellites — Speelyai counts Lewis River fish the annual books under the
+    # Lewis — so this is not a failure, but every such curve has to carry the fact
+    # or a reader will compare the totals with the rest of the page and find it
+    # broken. What would be a failure is a curve that carries no answer either way.
+    unknown = [r for r in rows if 'vs_annual' not in r]
+    if unknown:
+        fail(f'{len(unknown)} curves do not record how their totals compare with '
+             f'the annual reports')
+    else:
+        ok('every curve records how its totals compare with the annual reports')
+    off = [r for r in rows if r['vs_annual'] is not None
+           and not 0.7 <= r['vs_annual'] <= 1.35]
+    none = sum(1 for r in rows if r['vs_annual'] is None)
+    ok(f'{len(rows) - len(off) - none} of {len(rows)} curves reconcile with the '
+       f'annual reports; {len(off)} are satellites or part seasons and say so, '
+       f'{none} have no annual figure to check against')
+
+
 def check_units():
     """The parser and join unit tests, run as part of the audit.
 
@@ -530,13 +588,13 @@ def check_units():
     if not os.path.isdir(tests):
         warn('no tests directory')
         return
-    suite = unittest.TestLoader().discover(tests, pattern='test_[pj]*.py',
+    suite = unittest.TestLoader().discover(tests, pattern='test_[pjt]*.py',
                                            top_level_dir=tests)
     result = unittest.TextTestRunner(stream=open(os.devnull, 'w'),
                                      verbosity=0).run(suite)
     n = result.testsRun
     if result.wasSuccessful():
-        ok(f'{n} parser and join unit tests pass')
+        ok(f'{n} parser, join and timing unit tests pass')
     else:
         for case, trace in result.failures + result.errors:
             fail(f'{case}: {trace.strip().splitlines()[-1]}')
@@ -552,7 +610,7 @@ def run():
                check_weekly_against_annual, check_monotonic, check_preliminary,
                check_coverage,
                check_values, check_geo, check_manifest, check_freshness,
-               check_joins, check_units):
+               check_joins, check_facility_timing, check_units):
         try:
             fn()
         except Exception as e:

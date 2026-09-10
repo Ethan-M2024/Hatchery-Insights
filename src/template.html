@@ -751,7 +751,10 @@ code { font-family: var(--mono); font-size: .92em; }
           Built from the weekly in-season reports, which are cumulative season-to-date.
         </p>
       </div>
-      <button class="tbl-toggle" data-table="t-timing">Table</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="timing-where" aria-label="Which river or rack"></select>
+        <button class="tbl-toggle" data-table="t-timing">Table</button>
+      </div>
     </div>
     <svg class="plot" id="c-timing" height="360"></svg>
     <div class="legend" id="l-timing"></div>
@@ -1152,7 +1155,7 @@ const state = {
   species: new Set(primaryIdx),
   facility: null, raceSp: primaryIdx[0],
   compare: [], cmpQ: '', cmpMeasure: 'adults',
-  timingSp: 0, dataQ: '', sort: { key: 'adults', dir: -1 }
+  timingSp: 0, timingFac: null, dataQ: '', sort: { key: 'adults', dir: -1 }
 };
 
 function rowsInScope() {
@@ -2033,6 +2036,178 @@ function timingSeries() {
     s.season >= state.from && s.season <= state.to);
 }
 
+/* ===================== when the fish arrive here =====================
+   The statewide curve says when Washington's fall Chinook come back. A river has
+   its own answer, and it is often weeks away from the state's: the Sol Duc's
+   winter steelhead and the Skykomish's are the same run type and a month apart.
+
+   Fourteen seasons of one rack's curves drawn on top of each other is unreadable
+   and would cost a megabyte of payload, so the build keeps the shape instead: the
+   middle season's pace week by week, and the range the middle half of seasons fell
+   inside. That is the average the question is really asking for. */
+
+const BYFAC = (RAW.weekly && RAW.weekly.byfac) || null;
+/* set when the chosen rack has no curve for the run just picked */
+let droppedRack = null;
+
+/* the racks that have a curve for whichever run is selected */
+function facTimingRows() {
+  if (!BYFAC) return [];
+  return BYFAC.rows.filter(r => r.sp === state.timingSp);
+}
+
+function renderTimingWhere() {
+  const sel = $('timing-where');
+  if (!sel) return false;
+  const here = facTimingRows()
+    .map(r => ({ row: r, f: r.f, name: BYFAC.facilities[r.f] }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+
+  /* the list is rebuilt whenever the run changes, because a rack that has a coho
+     curve may have no sockeye one, and offering it would promise a chart that
+     cannot be drawn */
+  const want = state.timingFac == null ? '' : String(state.timingFac);
+  clear(sel);
+  sel.appendChild(new Option('All Washington — every rack', ''));
+  for (const h of here) {
+    sel.appendChild(new Option(
+      h.name + '  · ' + h.row.seasons.length + ' seasons', h.f));
+  }
+  const known = here.some(h => String(h.f) === want);
+  sel.value = known ? want : '';
+  /* a rack that has a coho curve may have no sockeye one. Falling back to the
+     statewide view is right; doing it silently is not, so the reason is kept and
+     said in the scope line below the chart. */
+  droppedRack = null;
+  if (!known && want !== '') {
+    droppedRack = BYFAC.facilities[state.timingFac];
+    state.timingFac = null;
+  }
+  if (!sel.dataset.wired) {
+    sel.dataset.wired = '1';
+    sel.addEventListener('change', () => {
+      state.timingFac = sel.value === '' ? null : +sel.value;
+      renderAll();
+    });
+  }
+  sel.disabled = !here.length;
+  if (state.timingFac == null) return false;
+  drawFacTiming(here.find(h => h.f === state.timingFac).row);
+  return true;
+}
+
+function drawFacTiming(row) {
+  const weeks = row.med.map((_, k) => row.first + k);
+  const colour = cssv('--s1');
+  /* lo and hi are percentiles of the *share* arrived by a week, so the low one is
+     the slow season and the high one the quick season — the opposite of what the
+     names suggest at a glance, and worth saying in the tooltip */
+  lineChart($('c-timing'), {
+    xs: weeks,
+    series: [
+      { name: 'a quarter of seasons ran slower than this', values: row.lo,
+        color: cssv('--ink-3'), dim: true, label: false },
+      { name: 'a quarter ran quicker than this', values: row.hi,
+        color: cssv('--ink-3'), dim: true, label: false },
+      { name: 'the typical season', values: row.med, color: colour, label: false },
+    ],
+    xLabel: WEEK_LABEL, pct: true, yMaxForce: 100,
+    yFmt: v => Math.round(v) + '%', valFmt: v => v.toFixed(0) + '%'
+  });
+  ribbon($('c-timing'), weeks, row.lo, row.hi, colour);
+
+  const at = share => {
+    const k = row.med.findIndex(v => v >= share);
+    return k < 0 ? null : row.first + k;
+  };
+  const q1 = at(25), md = at(50), q3 = at(75);
+  renderLegend($('l-timing'), [
+    { name: 'the typical season here', color: colour },
+    { name: 'the middle half of seasons fall in the shaded band',
+      color: cssv('--ink-3') }
+  ]);
+  const name = BYFAC.facilities[row.f];
+  const selName = W.species[state.timingSp];
+  const runName = selName.replace(' \u00b7 ', ' — ');
+  /* the same warning the statewide chart carries: a combined species is several
+     runs pooled, and at a rack that handles both the mixture shifts year to year,
+     which widens the band without the timing of either run having moved */
+  const pooled = !selName.includes('\u00b7')
+    && W.species.some(n => n.startsWith(selName + ' \u00b7'))
+    ? selName + ' at this rack is several runs at once — pick one from the list '
+      + 'above for a timing that describes actual fish. '
+    : '';
+  const spread = row.seasons.map(s => s[1]);
+  const swing = Math.max(...spread) - Math.min(...spread);
+  $('timing-note').textContent = pooled +
+    name + ', ' + runName + ': the shape of an average season here, from ' +
+    row.seasons.length + ' seasons that were watched from the start of the run. ' +
+    'A quarter of the fish are in by ' + WEEK_LABEL(q1) + ', half by ' +
+    WEEK_LABEL(md) + ', three quarters by ' + WEEK_LABEL(q3) + '. The middle ' +
+    'season is drawn; the band is where the middle half of seasons sat, so a wide ' +
+    'band means this river\u2019s timing moves about from year to year — here the ' +
+    'half-way point has landed as much as ' + swing + ' weeks apart. Built from ' +
+    'the weekly in-season reports, which are preliminary. Seasons under ' +
+    fmt(BYFAC.min_fish) + ' fish, or first seen with the run already going, are ' +
+    'left out: a curve that starts half way up is a tail, not an arrival.' +
+    booking(row);
+
+  const scope = $('timing-scope');
+  if (scope) {
+    scope.textContent = runName + ' at ' + name + ': ' + row.seasons.length +
+      ' seasons averaged. Choose "All Washington" beside the chart for the ' +
+      'statewide curve.';
+  }
+  renderTable($('t-timing'),
+    [{ label: 'Season', left: true, get: r => season(r[0]) },
+     { label: 'Half the run in by', left: true, get: r => WEEK_LABEL(r[1]) },
+     { label: 'Week of season', get: r => r[1] },
+     { label: 'Adults counted here', get: r => fmt(r[2]) }],
+    row.seasons.slice().reverse(),
+    { caption: 'One row per season this rack was watched from the start of its ' +
+        'run. The chart above is the middle of these, week by week — not the ' +
+        'average of these dates, which would be pulled about by one odd year.' });
+}
+
+/* Whether the totals beside this curve are this rack's own.
+
+   A satellite counts fish in the weekly reports that the annual report books under
+   its parent hatchery: Speelyai handles Lewis River spring Chinook and the weekly
+   figures there run nineteen times the annual's, because the annual credits those
+   fish to the Lewis. The arrival times are still Speelyai's — the fish really did
+   turn up when they turned up — but the season totals are not the rack's final
+   count, and saying nothing would leave a reader comparing them with the rest of
+   the dashboard and finding it broken. */
+function booking(row) {
+  const r = row.vs_annual;
+  if (r == null) return ' The annual reports have no final count for this rack and ' +
+    'run to check the season totals against.';
+  if (r > 1.35) return ' The season totals below are the weekly count at this rack, ' +
+    'which runs about ' + (r < 10 ? r.toFixed(1) : Math.round(r)) + ' times the ' +
+    'annual report\u2019s figure for it: this is a satellite, and the annual books ' +
+    'its fish under the parent hatchery. Read the shape, not the totals.';
+  if (r < 0.7) return ' The season totals below are the weekly count, about ' +
+    (r * 100).toFixed(0) + '% of the annual report\u2019s final figure — the weekly ' +
+    'series stops before the last fish are in. The shape is unaffected.';
+  return ' The season totals below agree with the annual reports for this rack.';
+}
+
+/* a filled ribbon between two curves, added over a chart lineChart has drawn */
+function ribbon(svg, xs, lo, hi, colour) {
+  const box = svg.viewBox.baseVal;
+  const m = { t: 14, r: box.width < 560 ? 14 : 62, b: 26, l: 46 };
+  const iw = Math.max(10, box.width - m.l - m.r);
+  const ih = (+svg.getAttribute('height') || box.height) - m.t - m.b;
+  const X = k => m.l + (xs.length === 1 ? iw / 2 : (k / (xs.length - 1)) * iw);
+  const Y = v => m.t + ih - (v / 100) * ih;
+  let d = '';
+  xs.forEach((_, k) => { d += (k ? 'L' : 'M') + X(k) + ' ' + Y(lo[k]); });
+  for (let k = xs.length - 1; k >= 0; k--) d += 'L' + X(k) + ' ' + Y(hi[k]);
+  const path = el('path', { d: d + 'Z', fill: colour, 'fill-opacity': .14 });
+  /* behind the lines the chart already drew */
+  svg.insertBefore(path, svg.firstChild);
+}
+
 function renderTiming() {
   if (!W) { $('panel-timing').classList.add('hidden'); return; }
   const sel = $('timing-species');
@@ -2084,6 +2259,8 @@ function renderTiming() {
     sel.value = state.timingSp;
     sel.addEventListener('change', () => { state.timingSp = +sel.value; renderAll(); });
   }
+  if (renderTimingWhere()) return;   /* a rack is picked: its own curve instead */
+
   const rows = timingSeries().sort((a, b) => a.season - b.season);
   /* the axis follows the species rather than assuming a 52-week run: coho are done
      by December, winter steelhead are still arriving the following May */
@@ -2122,7 +2299,13 @@ function renderTiming() {
     const n = timingSeries().length;
     scope.textContent = `${W.species[state.timingSp].replace(' · ', ' — ')}: `
       + `${n} completed season${n === 1 ? '' : 's'} charted below`
-      + (LIVE_RUNS.has(state.timingSp) ? `, plus ${season(LIVE_YEAR)} in progress.` : '.');
+      + (LIVE_RUNS.has(state.timingSp) ? `, plus ${season(LIVE_YEAR)} in progress.` : '.')
+      + (droppedRack
+          ? ` ${droppedRack} has no curve for this run, so the chart is back to `
+            + `every rack.` : '')
+      + (BYFAC && facTimingRows().length
+          ? ` Pick a river beside the "when the fish arrive" chart for one rack's `
+            + `own timing.` : '');
   }
   const selName = W.species[state.timingSp];
   const hasRuns = !selName.includes('\u00b7')
@@ -4853,7 +5036,8 @@ function renderFacProfile(fac, rows, years) {
 /* every piece of state worth putting in a link. Anything not here is a detail of
    one card and would only make the URL longer without making it more useful. */
 const URL_KEYS = ['tab', 'from', 'to', 'region', 'bo', 'species', 'facility',
-                  'chainSp', 'stockSp', 'timingSp', 'raceSp', 'cmpMeasure'];
+                  'chainSp', 'stockSp', 'timingSp', 'timingFac', 'raceSp',
+                  'cmpMeasure'];
 
 let hashLocked = false;   /* set while we are the ones writing the hash */
 
@@ -4869,6 +5053,7 @@ function stateToHash() {
   const def = [...primaryIdx].sort((a, b) => a - b);
   if (sp.join(',') !== def.join(',')) q.set('species', sp.join(',') || 'none');
   if (state.facility != null) q.set('facility', state.facility);
+  if (state.timingFac != null) q.set('timingFac', state.timingFac);
   for (const k of ['chainSp', 'stockSp', 'timingSp', 'raceSp']) {
     if (state[k] != null && state[k] !== '') q.set(k, state[k]);
   }
@@ -4901,6 +5086,10 @@ function hashToState() {
   }
   const fac = num('facility', 0, A.facilities.length - 1);
   if (fac != null) state.facility = fac;
+  if (q.has('timingFac')) {
+    const v = +q.get('timingFac');
+    state.timingFac = Number.isFinite(v) && v >= 0 ? v : null;
+  }
   for (const k of ['chainSp', 'stockSp', 'timingSp', 'raceSp']) {
     const v = num(k, 0, A.species.length - 1);
     if (v != null) state[k] = v;

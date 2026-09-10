@@ -538,6 +538,215 @@ FATE_FIELDS = ['adult_total', 'jack_total', 'mortality', 'surplus',
                'shipped', 'on_hand_adults']
 
 
+#: a facility-species-season needs this many fish and this many reports before its
+#: arrival curve says anything; below it a single late report moves the median weeks
+FAC_TIMING_FISH = 200
+FAC_TIMING_WEEKS = 6
+#: and this many seasons before an average of them is worth drawing
+FAC_TIMING_SEASONS = 3
+#: a season whose middle fish lands this far from the rest of them is not a late
+#: season, it is a season filed on the wrong side of the March boundary
+FAC_TIMING_OUTLIER = 20
+
+
+def build_facility_timing(species_names, facmap=None, annual_by_fac=None):
+    """When a run arrives at one rack, averaged over the seasons on record.
+
+    The statewide curve answers "when do Washington's fall Chinook come back"; an
+    angler or a manager wants "when do they come back *here*". Same arithmetic, one
+    river at a time.
+
+    Each row of a weekly report is one stock's season-to-date total as of its own
+    `data_date`, and a rack runs several stocks at once, so a week's figure is the
+    sum across stocks of the latest total each had reached by then — never a sum of
+    the rows, which would count the same fish again every week they stood in the
+    pond.
+
+    Only the shape is kept, not the counts: the median season's cumulative share
+    week by week, with the range the middle half of seasons fell inside. Fourteen
+    seasons of raw curves for two hundred rack-species pairs would be a megabyte of
+    payload to draw fourteen grey lines nobody can read.
+    """
+    if not os.path.exists(paths.RAW_WEEKLY):
+        return None
+    import datetime
+    alias = (facmap or {}).get('alias', {})
+    merged = (facmap or {}).get('merged', {})
+
+    def canon(raw):
+        n = norm_fac(raw)
+        return merged.get(alias.get(n, n), alias.get(n, n))
+
+    sp_index = {n: k for k, n in enumerate(species_names)}
+    per_stock = collections.defaultdict(dict)   # (fac,sp,season,stock) -> week -> n
+    opened = None      # the first weekly report there is
+    for r in csv.DictReader(open_text(paths.RAW_WEEKLY)):
+        rd = r.get('report_date') or ''
+        try:
+            filed = datetime.datetime.strptime(rd.split(', ', 1)[1], '%B %d, %Y').date()
+            opened = filed if opened is None else min(opened, filed)
+        except (ValueError, IndexError):
+            pass
+        day = as_data_date(r.get('data_date'))
+        if not day:
+            continue
+        n = i(r.get('adult_total'))
+        if n <= 0:
+            continue
+        fac = canon(r.get('facility'))
+        if not fac:
+            continue
+        grp, race = norm_species(r.get('species'))
+        race = norm_race(race)
+        # a season is anchored on 1 March, so a run that carries into January is
+        # still filed with the autumn it started in
+        season = day.year if day.month >= SEASON_START_MONTH else day.year - 1
+        week = (day - datetime.date(season, SEASON_START_MONTH, 1)).days // 7
+        if not 0 <= week <= 75:
+            continue
+        stock = (r.get('stock') or '').strip()
+        names = [grp] + ([f'{grp} \u00b7 {race}'] if race not in ('NA', '') else [])
+        for name in names:
+            if name not in sp_index:
+                continue
+            cell = per_stock[(fac, sp_index[name], season, stock)]
+            cell[week] = max(cell.get(week, 0), n)
+
+    curves = collections.defaultdict(lambda: collections.defaultdict(int))
+    for (fac, sp, season, _stock), weeks in per_stock.items():
+        running = 0
+        for w in range(min(weeks), 76):
+            running = max(running, weeks.get(w, 0))
+            curves[(fac, sp, season)][w] += running
+
+    by_pair = collections.defaultdict(list)
+    for (fac, sp, season), weeks in curves.items():
+        # A season the archive opened in the middle of is a fragment, and the first
+        # report of it carries months of arrivals in one figure. Speelyai's 2012
+        # spring Chinook passed every other test and put its median nineteen weeks
+        # after the fourteen seasons around it, purely because the weekly series
+        # begins in January 2013.
+        if opened and datetime.date(season, SEASON_START_MONTH, 1) < opened:
+            continue
+        obs = sorted(weeks)
+        end = weeks[obs[-1]]
+        if end < FAC_TIMING_FISH or len(obs) < FAC_TIMING_WEEKS:
+            continue
+        # a run first seen already half over has no arrival curve, only a tail
+        if weeks[obs[0]] > end * 0.15:
+            continue
+        by_pair[(fac, sp)].append((season, weeks, end))
+
+    facs, out = {}, []
+    for (fac, sp), seasons in sorted(by_pair.items()):
+        # A run that straddles 1 March is cut in two by the season boundary, and the
+        # March half is filed as the start of the next season. Forks Creek steelhead
+        # arrive in weeks 44 to 46 every year and one season read as week 2 for that
+        # reason alone. A season whose middle fish is nowhere near the rest of them
+        # is that artefact, not a run that came five months early.
+        middles = sorted(_cross_week(w, e, 50) for _s, w, e in seasons)
+        typical = middles[len(middles) // 2]
+        seasons = [s for s in seasons
+                   if abs(_cross_week(s[1], s[2], 50) - typical) <= FAC_TIMING_OUTLIER]
+        if len(seasons) < FAC_TIMING_SEASONS:
+            continue
+        shares = []
+        for _season, weeks, end in seasons:
+            obs = sorted(weeks)
+            row, running = [], 0.0
+            for w in range(76):
+                if w < obs[0]:
+                    row.append(0.0)
+                    continue
+                if w in weeks:
+                    running = weeks[w] / end * 100
+                row.append(min(100.0, running))
+            shares.append(row)
+        med = [_pct(col, 50) for col in zip(*shares)]
+        lo = [_pct(col, 25) for col in zip(*shares)]
+        hi = [_pct(col, 75) for col in zip(*shares)]
+        # trim to the weeks the run is actually happening in: the last week the
+        # typical season is still at nothing, through the first it has finished
+        start = max([w for w in range(76) if med[w] <= 0.5] or [-1])
+        stop = min([w for w in range(76) if med[w] >= 99.5] or [-1])
+        # a typical season already under way on 1 March is one whose season boundary
+        # cuts through its own run — Bingham Creek coho counted in early March are
+        # the tail of the previous autumn, not the start of the coming one. The
+        # curve would open part way up the axis and read as a run that arrived
+        # before it began, so it is dropped rather than drawn.
+        if start < 0 or stop < 0 or stop <= start:
+            continue
+        if fac not in facs:
+            facs[fac] = len(facs)
+        # Where the annual report books these fish. A satellite rack — Speelyai on
+        # the Lewis, say — counts fish in the weekly reports that the annual credits
+        # to its parent hatchery, so its weekly season totals are several times the
+        # annual's. The arrival times are still that rack's own, but the totals are
+        # not comparable, and the page has to say which case it is in.
+        ratio = None
+        if annual_by_fac:
+            group = species_names[sp].split(' \u00b7 ')[0]
+            ratios = []
+            for season, _weeks, end in seasons:
+                final = annual_by_fac.get((fac, group, season), 0)
+                if final > 0:
+                    ratios.append(end / final)
+            if ratios:
+                ratios.sort()
+                ratio = round(ratios[len(ratios) // 2], 2)
+        out.append({
+            'f': facs[fac], 'sp': sp, 'first': start, 'vs_annual': ratio,
+            'med': [round(v) for v in med[start:stop + 1]],
+            'lo': [round(v) for v in lo[start:stop + 1]],
+            'hi': [round(v) for v in hi[start:stop + 1]],
+            # each season's own middle fish, so the table can show whether this
+            # river's run is drifting earlier or later
+            'seasons': sorted(
+                [season, _cross_week(weeks, end, 50), end]
+                for season, weeks, end in seasons),
+        })
+    inv = [None] * len(facs)
+    for name, k in facs.items():
+        inv[k] = name
+    return {'facilities': inv, 'rows': out,
+            'min_seasons': FAC_TIMING_SEASONS, 'min_fish': FAC_TIMING_FISH}
+
+
+def as_data_date(value):
+    """The weekly reports write a stock's as-of date as 10/25/18."""
+    import datetime
+    m = re.fullmatch(r'\s*(\d{1,2})/(\d{1,2})/(\d{2}|\d{4})\s*', str(value or ''))
+    if not m:
+        return None
+    month, day, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
+    if year < 100:
+        year += 2000 if year < 90 else 1900
+    try:
+        return datetime.date(year, month, day)
+    except ValueError:
+        return None
+
+
+def _pct(values, q):
+    """Linear-interpolated percentile of a small sample."""
+    xs = sorted(values)
+    if not xs:
+        return 0.0
+    k = (len(xs) - 1) * q / 100
+    lo, hi = int(k), min(int(k) + 1, len(xs) - 1)
+    return xs[lo] + (xs[hi] - xs[lo]) * (k - lo)
+
+
+def _cross_week(weeks, end, share):
+    """The first week a season's cumulative count passed a share of its total."""
+    running = 0
+    for w in sorted(weeks):
+        running = max(running, weeks[w])
+        if running >= end * share / 100:
+            return w
+    return max(weeks)
+
+
 def build_fate(peaks, facmap=None):
     """What became of the fish at each rack, per facility, species and season.
 
@@ -802,6 +1011,17 @@ def main():
                 # and what the same date looked like in the seasons before it
                 'pace': season_pace(_d.date.fromisoformat(newest)) if newest else [],
             }
+    if wk:
+        # the same arrival curve as the statewide chart, one rack at a time
+        annual_by_fac = collections.defaultdict(int)
+        for r in A['rows']:
+            annual_by_fac[(A['facilities'][r[ci['fac']]],
+                           A['species'][r[ci['sp']]], r[ci['year']])] += r[ci['adults']]
+        byfac = build_facility_timing(wk['species'], facmap, annual_by_fac)
+        if byfac and byfac['rows']:
+            wk['byfac'] = byfac
+            print(f"   run timing by rack: {len(byfac['rows'])} rack-run pairs "
+                  f"across {len(byfac['facilities'])} racks")
     if wk and wk.get('peaks'):
         fate = build_fate(peaks, facmap)
         if fate:
