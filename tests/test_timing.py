@@ -75,6 +75,32 @@ class CrossWeek(unittest.TestCase):
         self.assertEqual(B._cross_week({40: 900, 41: 1000}, 1000, 50), 40)
 
 
+class WeeklyArrivals(unittest.TestCase):
+    """The fish that came in each week, read back off a cumulative curve."""
+
+    def test_counts_are_the_rise_week_to_week(self):
+        cum = {w: n for w, n in [(10, 100), (11, 300), (12, 700), (13, 1000), (14, 1000)]}
+        self.assertEqual(B._weekly_arrivals(cum, 1000, {10, 11, 12, 13, 14}),
+                         [10, [100, 200, 400, 300], []])
+
+    def test_a_week_with_no_report_is_a_gap_not_a_quiet_week(self):
+        """The fish from the unreported week land in the next one, so the page must
+        know which weeks were missing to say the big one is two weeks lumped."""
+        cum = {10: 100, 11: 100, 12: 900}
+        self.assertEqual(B._weekly_arrivals(cum, 900, {10, 12}),
+                         [10, [100, 0, 800], [1]])
+
+    def test_the_counts_add_up_to_the_season(self):
+        cum = {5: 40, 6: 40, 7: 90, 8: 400, 9: 410}
+        first, counts, _gaps = B._weekly_arrivals(cum, 410, set(cum))
+        self.assertEqual(sum(counts), 410)
+        self.assertEqual(first, 5)
+
+    def test_weeks_before_the_first_fish_are_not_kept(self):
+        cum = {3: 0, 4: 0, 5: 50, 6: 80}
+        self.assertEqual(B._weekly_arrivals(cum, 80, set(cum))[0], 5)
+
+
 class FacilityCurves(unittest.TestCase):
     """build_facility_timing, driven by rows shaped like the weekly CSV."""
 
@@ -245,6 +271,17 @@ class FacilityCurves(unittest.TestCase):
         out = self._build(rows)
         self.assertEqual(sorted(self.SPECIES[r['sp']] for r in out['rows']),
                          ['Chinook', 'Chinook · Fall'])
+
+    def test_each_season_carries_its_weekly_counts(self):
+        rows = []
+        for y in (2015, 2016, 2017):
+            rows += self.rows(self.ramp(y))
+        r = self._build(rows)['rows'][0]
+        self.assertEqual([w[0] for w in r['wk']], [2015, 2016, 2017])
+        for season, first, counts, gaps in r['wk']:
+            self.assertEqual(first, 20)
+            self.assertEqual(sum(counts), 1000)
+            self.assertEqual(gaps, [])
 
 
 if __name__ == '__main__':

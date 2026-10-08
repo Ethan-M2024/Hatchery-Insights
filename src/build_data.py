@@ -579,6 +579,7 @@ def build_facility_timing(species_names, facmap=None, annual_by_fac=None):
 
     sp_index = {n: k for k, n in enumerate(species_names)}
     per_stock = collections.defaultdict(dict)   # (fac,sp,season,stock) -> week -> n
+    reported = collections.defaultdict(set)     # (fac,sp,season) -> weeks with a report
     opened = None      # the first weekly report there is
     for r in csv.DictReader(open_text(paths.RAW_WEEKLY)):
         rd = r.get('report_date') or ''
@@ -611,6 +612,7 @@ def build_facility_timing(species_names, facmap=None, annual_by_fac=None):
                 continue
             cell = per_stock[(fac, sp_index[name], season, stock)]
             cell[week] = max(cell.get(week, 0), n)
+            reported[(fac, sp_index[name], season)].add(week)
 
     curves = collections.defaultdict(lambda: collections.defaultdict(int))
     for (fac, sp, season, _stock), weeks in per_stock.items():
@@ -635,7 +637,7 @@ def build_facility_timing(species_names, facmap=None, annual_by_fac=None):
         # a run first seen already half over has no arrival curve, only a tail
         if weeks[obs[0]] > end * 0.15:
             continue
-        by_pair[(fac, sp)].append((season, weeks, end))
+        by_pair[(fac, sp)].append((season, weeks, end, reported[(fac, sp, season)]))
 
     facs, out = {}, []
     for (fac, sp), seasons in sorted(by_pair.items()):
@@ -644,14 +646,14 @@ def build_facility_timing(species_names, facmap=None, annual_by_fac=None):
         # arrive in weeks 44 to 46 every year and one season read as week 2 for that
         # reason alone. A season whose middle fish is nowhere near the rest of them
         # is that artefact, not a run that came five months early.
-        middles = sorted(_cross_week(w, e, 50) for _s, w, e in seasons)
+        middles = sorted(_cross_week(w, e, 50) for _s, w, e, _r in seasons)
         typical = middles[len(middles) // 2]
         seasons = [s for s in seasons
                    if abs(_cross_week(s[1], s[2], 50) - typical) <= FAC_TIMING_OUTLIER]
         if len(seasons) < FAC_TIMING_SEASONS:
             continue
         shares = []
-        for _season, weeks, end in seasons:
+        for _season, weeks, end, _r in seasons:
             obs = sorted(weeks)
             row, running = [], 0.0
             for w in range(76):
@@ -687,7 +689,7 @@ def build_facility_timing(species_names, facmap=None, annual_by_fac=None):
         if annual_by_fac:
             group = species_names[sp].split(' \u00b7 ')[0]
             ratios = []
-            for season, _weeks, end in seasons:
+            for season, _weeks, end, _r in seasons:
                 final = annual_by_fac.get((fac, group, season), 0)
                 if final > 0:
                     ratios.append(end / final)
@@ -703,13 +705,41 @@ def build_facility_timing(species_names, facmap=None, annual_by_fac=None):
             # river's run is drifting earlier or later
             'seasons': sorted(
                 [season, _cross_week(weeks, end, 50), end]
-                for season, weeks, end in seasons),
+                for season, weeks, end, _r in seasons),
+            # and the counts themselves, so a reader can see the one or two weeks
+            # that carry most of a run rather than only the smoothed shape
+            'wk': sorted([season] + _weekly_arrivals(weeks, end, seen)
+                         for season, weeks, end, seen in seasons),
         })
     inv = [None] * len(facs)
     for name, k in facs.items():
         inv[k] = name
     return {'facilities': inv, 'rows': out,
             'min_seasons': FAC_TIMING_SEASONS, 'min_fish': FAC_TIMING_FISH}
+
+
+def _weekly_arrivals(cum, end, reported):
+    """Fish that arrived each week of one season, from its cumulative curve.
+
+    Returns [first week, counts, gaps]: counts run from the first week anything was
+    counted to the week the season reached its total, and gaps lists the positions
+    in counts where no report was filed. A week after a gap carries every fish
+    since the last report, so the page has to show it as several weeks lumped
+    together rather than as one week's surge.
+    """
+    weeks = sorted(w for w in cum if cum[w] > 0)
+    if not weeks:
+        return [0, [], []]
+    first = weeks[0]
+    last = next(w for w in weeks if cum[w] >= end)
+    counts, gaps, before = [], [], 0
+    for w in range(first, last + 1):
+        now = max(before, cum.get(w, before))
+        counts.append(now - before)
+        before = now
+        if w not in reported:
+            gaps.append(w - first)
+    return [first, counts, gaps]
 
 
 def as_data_date(value):

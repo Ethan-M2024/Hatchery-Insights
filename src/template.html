@@ -665,6 +665,25 @@ code { font-family: var(--mono); font-size: .92em; }
     <div class="tbl-wrap hidden" id="t-fac"></div>
   </div>
 
+  <div class="card" id="rack-card">
+    <div class="card-head">
+      <div>
+        <h2 id="rack-title">Week by week at this rack</h2>
+        <p class="note" id="rack-note">Fish counted each week of each season, from the weekly in-season reports.</p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="rack-run" aria-label="Run at this rack"></select>
+        <button class="tbl-toggle" data-table="t-rack">Table</button>
+      </div>
+    </div>
+    <div id="rack-stats"></div>
+    <svg class="plot" id="c-rack-heat" height="200"></svg>
+    <p class="note" id="rack-heat-note"></p>
+    <svg class="plot" id="c-rack-bars" height="240"></svg>
+    <div class="legend" id="l-rack"></div>
+    <div class="tbl-wrap hidden" id="t-rack"></div>
+  </div>
+
   <div class="card">
     <div class="card-head">
       <div>
@@ -1833,6 +1852,7 @@ function renderFacDetail(rows, years) {
   if (f == null) return;
   $('fac-title').textContent = A.facilities[f];
   renderFacProfile(f, rows, years);
+  renderRack(years);
   const sub = rows.filter(r => r[C.fac] === f);
   const tot = new Map();
   for (const r of sub) tot.set(r[C.sp], (tot.get(r[C.sp]) || 0) + r[C.adults]);
@@ -2206,6 +2226,333 @@ function ribbon(svg, xs, lo, hi, colour) {
   const path = el('path', { d: d + 'Z', fill: colour, 'fill-opacity': .14 });
   /* behind the lines the chart already drew */
   svg.insertBefore(path, svg.firstChild);
+}
+
+/* ===================== week by week at one rack =====================
+   The arrival curve above is a smoothed shape. The question people bring to a rack
+   is blunter: which weeks did the fish actually come in, and how many. A run of
+   eight thousand coho is often two weeks of three thousand with a trickle either
+   side, and a curve of shares hides exactly that. So this draws the counts: one row
+   per season, one cell per week, darker where more fish came in, with the season
+   picked below it drawn as bars against what a typical season does that week. */
+
+const rack = { run: null, season: null };
+
+function rackRuns(fac) {
+  if (!BYFAC || fac == null) return [];
+  const name = A.facilities[fac];
+  return BYFAC.rows.filter(r => BYFAC.facilities[r.f] === name && r.wk);
+}
+
+/* everything the tiles and the table say about one season, from its weekly counts */
+function rackSeason(w) {
+  const [yr, first, counts, gaps] = w;
+  const gapSet = new Set(gaps);
+  const total = counts.reduce((a, b) => a + b, 0);
+  let pk = 0;
+  counts.forEach((v, k) => { if (v > counts[pk]) pk = k; });
+  const top2 = counts.slice().sort((a, b) => b - a).slice(0, 2).reduce((a, b) => a + b, 0);
+  let run = 0, half = null, most = null;
+  counts.forEach((v, k) => {
+    run += v;
+    if (half == null && run >= total * .5) half = first + k;
+    if (most == null && run >= total * .8) most = first + k;
+  });
+  /* a count filed after weeks with no report carries all of them, so it is several
+     weeks of fish in one figure, not one week's surge */
+  const lumped = k => { let n = 0; while (gapSet.has(k - 1 - n)) n++; return n; };
+  return { yr, first, last: first + counts.length - 1, counts, gapSet, total,
+           peakWeek: first + pk, peak: counts[pk], peakLumped: lumped(pk),
+           top2: total ? top2 / total : 0, half, most, gaps: gaps.length, lumped };
+}
+
+function median(xs) {
+  const s = xs.slice().sort((a, b) => a - b), m = s.length >> 1;
+  return s.length ? (s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2) : null;
+}
+
+function renderRack(years) {
+  const card = $('rack-card');
+  if (!card) return;
+  const runs = rackRuns(state.facility)
+    .map(r => ({ r, fish: r.seasons.reduce((a, s) => a + s[2], 0),
+                 name: W.species[r.sp] }))
+    /* a run type is a real group of fish; its species is several pooled, so on a
+       tie the run type is offered first */
+    .sort((a, b) => b.fish - a.fish || b.name.includes('·') - a.name.includes('·'));
+  const sel = $('rack-run');
+  const heat = $('c-rack-heat'), bars = $('c-rack-bars');
+  const show = on => {
+    for (const n of [heat, bars, $('rack-heat-note'), $('l-rack'), $('rack-stats')])
+      n.style.display = on ? '' : 'none';
+    sel.disabled = !on;
+  };
+  $('rack-title').textContent = 'Week by week at ' + A.facilities[state.facility];
+  clear(sel);
+  if (!runs.length) {
+    show(false);
+    clear($('t-rack'));
+    $('rack-note').textContent = 'The weekly in-season reports have no series for this ' +
+      'rack long enough to chart: it takes ' + (BYFAC ? BYFAC.min_seasons : 3) +
+      ' seasons of at least ' + fmt(BYFAC ? BYFAC.min_fish : 200) + ' fish, each ' +
+      'watched from the start of its run. Totals by season are in the chart above.';
+    return;
+  }
+  show(true);
+  for (const x of runs)
+    sel.appendChild(new Option(x.name.replace(' · ', ' — ') + '  · ' +
+      x.r.wk.length + ' seasons', x.r.sp));
+  if (!runs.some(x => x.r.sp === rack.run)) rack.run = runs[0].r.sp;
+  sel.value = rack.run;
+  if (!sel.dataset.wired) {
+    sel.dataset.wired = '1';
+    sel.addEventListener('change', () => {
+      rack.run = +sel.value; rack.season = null; renderRack(yearsInScope());
+    });
+  }
+  const row = runs.find(x => x.r.sp === rack.run).r;
+  const all = row.wk.map(rackSeason);
+  const seasons = all.filter(s => s.yr >= state.from && s.yr <= state.to).reverse();
+  if (!seasons.length) {
+    show(false);
+    clear($('t-rack'));
+    $('rack-note').textContent = 'None of the ' + all.length + ' seasons this rack has ' +
+      'a weekly series for fall inside the selected seasons. Widen the season range ' +
+      'in the filters above.';
+    return;
+  }
+  if (!seasons.some(s => s.yr === rack.season)) rack.season = seasons[0].yr;
+  const cur = seasons.find(s => s.yr === rack.season);
+  const lo = Math.min(...seasons.map(s => s.first));
+  const hi = Math.max(...seasons.map(s => s.last));
+  /* what a typical season brings in each week: the middle season's count for that
+     week, with a season that had not started or had finished counting as nothing */
+  const typical = [];
+  for (let w = lo; w <= hi; w++)
+    typical.push(median(seasons.map(s => (w >= s.first && w <= s.last
+      ? s.counts[w - s.first] : 0))));
+
+  renderRackStats(cur, seasons, row);
+  drawRackHeat(heat, seasons, lo, hi, cur.yr, yr => {
+    rack.season = yr; renderRack(yearsInScope());
+  });
+  drawRackBars(bars, cur, typical, lo, hi);
+  renderLegend($('l-rack'), [
+    { name: season(cur.yr) + ', fish counted that week', color: cssv('--s1') },
+    { name: 'a typical season that week', color: cssv('--ink-3') }
+  ]);
+
+  const runName = W.species[row.sp].replace(' · ', ' — ');
+  $('rack-note').textContent = runName + ', ' + seasons.length + ' season' +
+    (seasons.length > 1 ? 's' : '') + ' from the weekly in-season reports, which are ' +
+    'preliminary and begin in 2013. Each week is the rise in the season-to-date ' +
+    'count, summed over every stock at the rack.' + booking(row);
+  $('rack-heat-note').textContent = 'Darker cells are bigger weeks, on one scale for ' +
+    'every season here, so a strong year reads darker than a weak one. The outlined ' +
+    'cell is each season’s peak week. A dashed cell had no report; the week after ' +
+    'it carries every fish since the last one. Click a season to chart it below.';
+
+  renderTable($('t-rack'),
+    [{ label: 'Season', left: true, get: s => season(s.yr) },
+     { label: 'Adults counted', get: s => fmt(s.total) },
+     { label: 'Peak week', left: true, get: s => WEEK_LABEL(s.peakWeek) +
+         (s.peakLumped ? ' (' + (s.peakLumped + 1) + ' weeks in one report)' : '') },
+     { label: 'Peak count', get: s => fmt(s.peak) },
+     { label: 'Peak share', get: s => (s.peak / s.total * 100).toFixed(0) + '%' },
+     { label: 'Busiest two weeks', get: s => (s.top2 * 100).toFixed(0) + '%' },
+     { label: 'Half in by', left: true, get: s => WEEK_LABEL(s.half) },
+     { label: '80% in by', left: true, get: s => WEEK_LABEL(s.most) },
+     { label: 'Weeks with no report', get: s => s.gaps }],
+    seasons,
+    { caption: 'One row per season. Shares are of the fish this rack counted that ' +
+        'season in the weekly reports.' });
+}
+
+/* the tiles above the heatmap: the picked season, how runs here usually go, and
+   whether the run is growing or shrinking across the whole annual record */
+function renderRackStats(cur, seasons, row) {
+  const host = $('rack-stats');
+  clear(host);
+  const wrap = document.createElement('div');
+  wrap.className = 'profile';
+  const add = (label, value, sub) => {
+    const d = document.createElement('div');
+    d.className = 'pf';
+    for (const [cls, text] of [['pf-l', label], ['pf-v', value], ['pf-s', sub]]) {
+      if (text == null) continue;
+      const n = document.createElement('span');
+      n.className = cls; n.textContent = text;
+      d.appendChild(n);
+    }
+    wrap.appendChild(d);
+  };
+  add('Peak week, ' + season(cur.yr), WEEK_LABEL(cur.peakWeek),
+      fmt(cur.peak) + ' fish, ' + (cur.peak / cur.total * 100).toFixed(0) +
+      '% of the season' + (cur.peakLumped ? ', over ' + (cur.peakLumped + 1) +
+      ' weeks with no report between' : ''));
+  add('Busiest two weeks', (cur.top2 * 100).toFixed(0) + '%',
+      'of ' + fmt(cur.total) + ' fish that season');
+  add('Half in by', WEEK_LABEL(cur.half), '80% by ' + WEEK_LABEL(cur.most));
+  const pw = seasons.map(s => s.peakWeek);
+  add('Peak usually lands', WEEK_LABEL(Math.round(median(pw))),
+      'between ' + WEEK_LABEL(Math.min(...pw)) + ' and ' + WEEK_LABEL(Math.max(...pw)) +
+      ' over ' + seasons.length + ' season' + (seasons.length > 1 ? 's' : ''));
+  add('Top two weeks, usually',
+      (median(seasons.map(s => s.top2)) * 100).toFixed(0) + '%',
+      'of a season’s fish, the middle season here');
+  const t = rackTrend(row);
+  if (t) add('Adults by season', t.value, t.sub);
+  host.appendChild(wrap);
+}
+
+/* Mann-Kendall on the annual record for this rack and species, the same test the
+   Trends tab runs statewide. The annual reports reach back to 1998, fifteen years
+   before the weekly series, so the trend is read from them. */
+function rackTrend(row) {
+  const group = W.species[row.sp].split(' · ')[0];
+  const sp = A.species.indexOf(group);
+  if (sp < 0) return null;
+  const by = new Map();
+  for (const r of A.rows) {
+    if (r[C.fac] !== state.facility || r[C.sp] !== sp) continue;
+    if (r[C.year] < state.from || r[C.year] > state.to) continue;
+    by.set(r[C.year], (by.get(r[C.year]) || 0) + r[C.adults]);
+  }
+  const xs = [...by.keys()].sort((a, b) => a - b), ys = xs.map(x => by.get(x));
+  const mk = mannKendall(ys);
+  if (!mk) return { value: 'Too short', sub: xs.length + ' seasons of ' + group +
+    ' in the annual reports; a trend test needs 8' };
+  const slope = senSlope(xs, ys);
+  const band = mk.p < .01 ? 'p<0.01' : mk.p < .05 ? 'p<0.05' : mk.p < .10 ? 'p<0.10, weak' : null;
+  const span = season(xs[0]) + ' to ' + season(xs[xs.length - 1]);
+  if (!band) return { value: 'No clear trend', sub: group + ', ' + span +
+    ', Mann-Kendall p=' + mk.p.toFixed(2) };
+  return { value: (slope > 0 ? 'Rising ' : 'Falling ') + compact(Math.abs(slope)) + '/season',
+           sub: group + ', ' + span + ', Sen’s slope, ' + band };
+}
+
+function drawRackHeat(svg, seasons, lo, hi, picked, onPick) {
+  clear(svg);
+  const Wd = width(svg), rowH = 18;
+  const m = { t: 4, r: 14, b: 26, l: 58 };
+  const H = m.t + m.b + rowH * seasons.length;
+  svg.setAttribute('height', H);
+  svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+  const iw = Math.max(10, Wd - m.l - m.r), nW = hi - lo + 1, cw = iw / nW;
+  const max = Math.max(1, ...seasons.map(s => s.peak));
+  const ink = cssv('--s1');
+  const cell = (x, y, attrs) => el('rect', Object.assign({
+    x: x + .5, y: y + 1.5, width: Math.max(1, cw - 1), height: rowH - 3, rx: 2 }, attrs), svg);
+  seasons.forEach((s, i) => {
+    const y = m.t + i * rowH;
+    if (s.yr === picked)
+      el('rect', { x: 0, y, width: Wd, height: rowH, fill: cssv('--accent-soft') }, svg);
+    el('text', { class: 'tick', x: m.l - 8, y: y + rowH / 2 + 4, 'text-anchor': 'end',
+                 'font-weight': s.yr === picked ? 700 : null }, svg).textContent = season(s.yr);
+    s.counts.forEach((v, k) => {
+      const x = m.l + (s.first + k - lo) * cw;
+      if (s.gapSet.has(k))
+        cell(x, y, { fill: 'none', stroke: cssv('--axis'), 'stroke-dasharray': '2 2' });
+      else
+        /* square root so a 300-fish week still shows beside a 5,000-fish one */
+        cell(x, y, { fill: v > 0 ? ink : cssv('--surface-2'),
+                     'fill-opacity': v > 0 ? .1 + .9 * Math.sqrt(v / max) : 1 });
+    });
+    cell(m.l + (s.peakWeek - lo) * cw, y,
+         { fill: 'none', stroke: cssv('--ink'), 'stroke-width': 1.4 });
+  });
+  const every = Math.max(1, Math.ceil(nW / Math.max(2, Math.floor(iw / 60))));
+  for (let w = lo; w <= hi; w += every)
+    el('text', { class: 'tick', x: m.l + (w - lo + .5) * cw, y: H - 8,
+                 'text-anchor': 'middle' }, svg).textContent = WEEK_LABEL(w);
+
+  const hit = el('rect', { class: 'hit', x: m.l, y: m.t, width: iw,
+                           height: rowH * seasons.length }, svg);
+  const at = ev => {
+    const bb = svg.getBoundingClientRect();
+    const px = (ev.clientX - bb.left) * (Wd / bb.width);
+    const py = (ev.clientY - bb.top) * (H / bb.height);
+    const s = seasons[Math.floor((py - m.t) / rowH)];
+    const w = lo + Math.floor((px - m.l) / cw);
+    return s ? { s, w, k: w - s.first } : null;
+  };
+  hit.style.cursor = 'pointer';
+  hit.addEventListener('pointermove', ev => {
+    const h = at(ev);
+    if (!h) return hideTip();
+    const { s, w, k } = h;
+    const inRun = k >= 0 && k < s.counts.length;
+    const rows = !inRun ? [{ value: '—', name: 'outside this season’s run' }]
+      : s.gapSet.has(k) ? [{ value: '—', name: 'no report filed this week' }]
+      : [{ value: fmt(s.counts[k]), name: 'fish counted', color: ink },
+         { value: (s.counts[k] / s.total * 100).toFixed(1) + '%', name: 'of the season' }]
+        .concat(s.lumped(k) ? [{ value: (s.lumped(k) + 1) + ' weeks',
+                                 name: 'in one report, after a gap' }] : [])
+        .concat(w === s.peakWeek ? [{ value: 'peak', name: 'busiest week this season' }] : []);
+    showTip(ev.clientX, ev.clientY, season(s.yr) + ', week of ' + WEEK_LABEL(w), rows);
+  });
+  hit.addEventListener('pointerleave', hideTip);
+  hit.addEventListener('click', ev => { const h = at(ev); if (h) onPick(h.s.yr); });
+}
+
+function drawRackBars(svg, s, typical, lo, hi) {
+  clear(svg);
+  const Wd = width(svg), H = +svg.getAttribute('height');
+  const m = { t: 14, r: 14, b: 26, l: 58 };
+  svg.setAttribute('viewBox', `0 0 ${Wd} ${H}`);
+  const iw = Math.max(10, Wd - m.l - m.r), ih = H - m.t - m.b;
+  const nW = hi - lo + 1, cw = iw / nW;
+  const top = Math.max(1, s.peak, ...typical);
+  const ticks = niceTicks(top);
+  /* niceTicks stops at the last step under the maximum; the tallest bar needs one
+     more above it or it runs off the top of the plot */
+  const step = ticks.length > 1 ? ticks[1] - ticks[0] : top;
+  while (ticks[ticks.length - 1] < top) ticks.push(ticks[ticks.length - 1] + step);
+  const yMax = ticks[ticks.length - 1];
+  const Y = v => m.t + ih - (v / yMax) * ih;
+  for (const t of ticks) {
+    el('line', { class: 'gridline', x1: m.l, x2: m.l + iw, y1: Y(t), y2: Y(t) }, svg);
+    el('text', { class: 'tick', x: m.l - 8, y: Y(t) + 4, 'text-anchor': 'end' }, svg)
+      .textContent = compact(t);
+  }
+  el('line', { class: 'axis-line', x1: m.l, x2: m.l + iw, y1: Y(0), y2: Y(0) }, svg);
+  const ink = cssv('--s1');
+  s.counts.forEach((v, k) => {
+    const x = m.l + (s.first + k - lo) * cw;
+    if (s.gapSet.has(k)) {
+      el('line', { x1: x + cw / 2, x2: x + cw / 2, y1: Y(0) - 6, y2: Y(0), stroke: cssv('--ink-3'),
+                   'stroke-dasharray': '2 2' }, svg);
+      return;
+    }
+    if (v <= 0) return;
+    /* a bar standing for several weeks is drawn paler so it does not read as one */
+    el('rect', { x: x + cw * .12, y: Y(v), width: Math.max(1, cw * .76), height: Y(0) - Y(v),
+                 fill: ink, 'fill-opacity': s.lumped(k) ? .45 : 1, rx: 1.5 }, svg);
+  });
+  let d = '';
+  typical.forEach((v, i) => { d += (i ? 'L' : 'M') + (m.l + (i + .5) * cw) + ' ' + Y(v); });
+  el('path', { class: 'serie', d, stroke: cssv('--ink-3'), 'stroke-width': 1.5 }, svg);
+  const every = Math.max(1, Math.ceil(nW / Math.max(2, Math.floor(iw / 60))));
+  for (let w = lo; w <= hi; w += every)
+    el('text', { class: 'tick', x: m.l + (w - lo + .5) * cw, y: H - 8,
+                 'text-anchor': 'middle' }, svg).textContent = WEEK_LABEL(w);
+
+  const hit = el('rect', { class: 'hit', x: m.l, y: m.t, width: iw, height: ih }, svg);
+  hit.addEventListener('pointermove', ev => {
+    const bb = svg.getBoundingClientRect();
+    const px = (ev.clientX - bb.left) * (Wd / bb.width);
+    const i = Math.max(0, Math.min(nW - 1, Math.floor((px - m.l) / cw)));
+    const k = lo + i - s.first;
+    const inRun = k >= 0 && k < s.counts.length;
+    const rows = [
+      inRun && s.gapSet.has(k) ? { value: '—', name: 'no report this week' }
+        : { value: inRun ? fmt(s.counts[k]) : '0', name: season(s.yr), color: ink },
+      { value: fmt(typical[i]), name: 'typical season', color: cssv('--ink-3') }];
+    if (inRun && s.lumped(k))
+      rows.push({ value: (s.lumped(k) + 1) + ' weeks', name: 'in one report, after a gap' });
+    showTip(ev.clientX, ev.clientY, 'Week of ' + WEEK_LABEL(lo + i), rows);
+  });
+  hit.addEventListener('pointerleave', hideTip);
 }
 
 function renderTiming() {
